@@ -4,6 +4,8 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { StatusBar } from 'expo-status-bar';
 import { StyleSheet, View, TouchableWithoutFeedback, Keyboard } from 'react-native';
 import Login from './app/screens/Login';
+import Homepage from './app/screens/Homepage';
+import QuestionnaireForm from './app/screens/QuestionnaireForm';
 
 const Stack = createNativeStackNavigator();
 
@@ -14,6 +16,8 @@ export default function App() {
         <NavigationContainer>
           <Stack.Navigator initialRouteName='Login'>
             <Stack.Screen name='Login' component={Login} options={{ headerShown: false }} />
+            <Stack.Screen name='Homepage' component={Homepage} options={{ headerShown: false }} />
+            <Stack.Screen name='QuestionnaireForm' component={QuestionnaireForm} options={{ headerShown: false }} />
           </Stack.Navigator>
         </NavigationContainer>
         <StatusBar style="auto" />

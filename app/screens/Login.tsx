@@ -1,61 +1,30 @@
-import React, { useState, useEffect } from 'react';
-import { View, TextInput, ActivityIndicator, Button, Alert, StyleSheet, TouchableOpacity, Text } from 'react-native';
-import { FIREBASE_AUTH, FIREBASE_DB } from '../../firebase';
+// Login component
+import React, { useState } from 'react';
+import { View, TextInput, TouchableOpacity, Text, ActivityIndicator, StyleSheet } from 'react-native';
 import { signInWithEmailAndPassword, createUserWithEmailAndPassword } from 'firebase/auth';
-import { doc, getDoc } from 'firebase/firestore';
+import { FIREBASE_AUTH } from '../../firebase';
+import { useNavigation } from '@react-navigation/native';
 
 const Login = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
-  const [userType, setUserType] = useState(null);
   const auth = FIREBASE_AUTH;
-
-  useEffect(() => {
-    const unsubscribe = auth.onAuthStateChanged(async (user) => {
-      if (user) {
-        const userType = await getUserType(user.uid);
-        setUserType(userType);
-      } else {
-        setUserType(null);
-      }
-    });
-
-    return () => unsubscribe();
-  }, []);
-
-  const getUserType = async (userId: string) => {
-    const userDocRef = doc(FIREBASE_DB, 'users', userId);
-    const userDocSnapshot = await getDoc(userDocRef);
-    if (userDocSnapshot.exists()) {
-      return userDocSnapshot.data().userType;
-    } else {
-      return null;
-    }
-  };
+  const navigation = useNavigation(); // Ensure this is within a screen component
 
   const signIn = async () => {
     setLoading(true);
     try {
       await signInWithEmailAndPassword(auth, email, password);
-      const currentUser = auth.currentUser;
-      if (currentUser) {
-        const userType = await getUserType(currentUser.uid);
-        if (userType === 'admin') {
-          alert('Welcome, admin!');
-        } else {
-          alert('Welcome!');
-        }
-      } else {
-        throw new Error('User not found');
-      }
+      navigation.navigate('Homepage' as never); // Navigate to Homepage after successful sign-in
     } catch (error) {
       console.log(error);
       alert('Error signing in');
     } finally {
       setLoading(false);
     }
-  };
+  }
+  
 
   const signUp = async () => {
     setLoading(true);
@@ -92,14 +61,14 @@ const Login = () => {
         <ActivityIndicator size='large' color='#0000ff' />
       ) : (
         <>
-         <View style={styles.buttonContainer}>
-          <TouchableOpacity style={styles.button} onPress={signIn}>
-            <Text style={styles.buttonText}>Sign In</Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.button} onPress={signUp}>
-            <Text style={styles.buttonText}>Sign Up</Text>
-          </TouchableOpacity>
-        </View>
+          <View style={styles.buttonContainer}>
+            <TouchableOpacity style={styles.button} onPress={signIn}>
+              <Text style={styles.buttonText}>Sign In</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.button} onPress={signUp}>
+              <Text style={styles.buttonText}>Sign Up</Text>
+            </TouchableOpacity>
+          </View>
         </>
       )}
     </View>
