@@ -1,16 +1,20 @@
 // Login component
 import React, { useState } from 'react';
-import { View, TextInput, TouchableOpacity, Text, ActivityIndicator, StyleSheet } from 'react-native';
+import { View, TextInput, TouchableOpacity, Text, ActivityIndicator, StyleSheet, Image } from 'react-native';
 import { signInWithEmailAndPassword, createUserWithEmailAndPassword } from 'firebase/auth';
 import { FIREBASE_AUTH } from '../../firebase';
 import { useNavigation } from '@react-navigation/native';
+import logo from '../../assets/logoInova.jpg';
 
 const Login = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const auth = FIREBASE_AUTH;
-  const navigation = useNavigation(); // Ensure this is within a screen component
+  const navigation = useNavigation(); 
+  const navigateToSignUp = () => {
+    navigation.navigate('SignUp' as never); // Defina este nome com base no seu roteamento
+  };
 
   const signIn = async () => {
     setLoading(true);
@@ -24,7 +28,6 @@ const Login = () => {
       setLoading(false);
     }
   }
-  
 
   const signUp = async () => {
     setLoading(true);
@@ -41,6 +44,7 @@ const Login = () => {
 
   return (
     <View style={styles.container}>
+      <Image source={logo} style={styles.logo} />
       <TextInput
         value={email}
         style={styles.input}
@@ -61,12 +65,18 @@ const Login = () => {
         <ActivityIndicator size='large' color='#0000ff' />
       ) : (
         <>
-          <View style={styles.buttonContainer}>
+          <View style={styles.signInContainer}>
             <TouchableOpacity style={styles.button} onPress={signIn}>
-              <Text style={styles.buttonText}>Sign In</Text>
+              <Text style={styles.buttonText}>Login</Text>
             </TouchableOpacity>
-            <TouchableOpacity style={styles.button} onPress={signUp}>
-              <Text style={styles.buttonText}>Sign Up</Text>
+          </View>
+          <View style={styles.signUpContainer}>
+            <Text style={styles.text}>Not registered yet? </Text>
+            <TouchableOpacity style={styles.buttonSignUp} onPress={navigateToSignUp}>
+              <View style={styles.textWithUnderline}>
+                <Text style={styles.buttonSignUpText}>Sign Up here</Text>
+                <View style={styles.underline} />
+              </View>
             </TouchableOpacity>
           </View>
         </>
@@ -79,10 +89,17 @@ export default Login;
 
 const styles = StyleSheet.create({
   container: {
-    marginHorizontal: 20,
     flex: 1,
     justifyContent: 'center',
-    textAlign: 'center'
+    textAlign: 'center',
+    backgroundColor: '#000115'
+  },
+  logo: {
+    width: 150,
+    height: 150,
+    resizeMode: 'contain',
+    alignSelf: 'center',
+    marginBottom: 40,
   },
   input: {
     marginVertical: 4,
@@ -96,21 +113,51 @@ const styles = StyleSheet.create({
     marginTop: 20,
     backgroundColor: '#fff',
   },
-  buttonContainer: {
+  signInContainer: {
     flexDirection: 'row',
     justifyContent: 'space-evenly',
     marginTop: 30,
   },
+  signUpContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-evenly',
+    position: 'absolute',
+    bottom: 80,
+    alignSelf: 'center'
+  },
   button: {
-    backgroundColor: '#007bff',
+    backgroundColor: '#dc801c',
     paddingVertical: 10,
     paddingHorizontal: 20,
     borderRadius: 100,
-    width: '40%', 
+    width: '30%', 
+  },
+  buttonSignUp: {
+    paddingLeft: 12,
+    textDecorationLine: 'underline',
+    textDecorationColor:'white'
+  },
+  textWithUnderline: {
+    alignItems: 'center',
+  },
+  buttonSignUpText: {
+    color: '#007bff',
+    textAlign: 'center',
+    fontWeight: 'bold',
+  },
+  underline: {
+    width: '100%',
+    height: 1,
+    backgroundColor: '#007bff',
+    marginTop: 4,
   },
   buttonText: {
     color: '#fff',
     textAlign: 'center',
     fontWeight: 'bold',
+  },
+  text: {
+    color: '#fff',
+    textAlign: 'center',
   },
 });
