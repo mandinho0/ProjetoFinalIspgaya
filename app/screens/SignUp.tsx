@@ -11,10 +11,10 @@ import {
   KeyboardAvoidingView,
   Platform
 } from 'react-native';
-import { createUserWithEmailAndPassword } from 'firebase/auth';
+import { createUserWithEmailAndPassword, fetchSignInMethodsForEmail } from 'firebase/auth';
 import { FIREBASE_AUTH } from '../../firebase';
 import { useNavigation } from '@react-navigation/native';
-import logo from '../../assets/logoInova.jpg';
+import logo from '../assets/logoInova.jpg';
 
 const SignUp = () => {
   const [email, setEmail] = useState('');

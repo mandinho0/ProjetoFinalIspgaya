@@ -1,0 +1,232 @@
+{
+    "D1. Anticipation": {
+        "Foresight": [
+            "The potential impact of innovation is foresighted "
+        ],
+        "Result Responsable usage": [
+            "Project outcomes are used/or ther is plan for responsibly usage after the project ends"
+        ],
+        "Pro-active impact assessment ": [
+            "There is a plan for responsibly usage of the innovation project results"
+        ]
+    },
+    "D2. Reflection": {
+        "Future Scenario": [
+            "Future scenario impact analysis is performed"
+        ],
+        "Social Science/Creativity": [
+            "Social scientists and ethicists are embedded in research"
+        ],
+        "Risk management": [
+            "Risks are  listed, assessed, priritiez and managed"
+        ],
+        "Risk report": [
+            "Risks and benefits of innovation are coomunicated among the stakeholders"
+        ],
+        "Conflit management": [
+            "Potential conflicts, interests and ideals are considered and analysed"
+        ]
+    },
+    "D3. Inclusion": {
+        "User-center design": [
+            "The user needs awere the departing point for an interative design process"
+        ],
+        "Participative research methods": [
+            "Participative research methods were applied "
+        ],
+        "Representatives of 4 helix": [
+            "All representantatives of 4 helix were envolved"
+        ],
+        "Gender equality": [
+            "Gender equality was  promoted and evaluated "
+        ],
+        "Equality Diversity Inclusion Policy": [
+            "Equality, Diversity and Inclusion Policy was formulated and applied "
+        ],
+        "Exchanging views": [
+            "Exchanging views with peers, researchers and innovators from other disciplines tooke place"
+        ]
+    },
+    "D4. Responsiveness": {
+        "Contingency plans": [
+            "Contigency plans  were timely implemented "
+        ],
+        "Real needs research questions": [
+            "Real needs and/or research questions were properly answered "
+        ],
+        "Innovation process adaptation": [
+            "The innovation processes are adapted considering external changes"
+        ],
+        "SDG alignment": [
+            "The innovation goals were aligned with some SDGs"
+        ]
+    },
+    "D5. Transparency": {
+        "Transparency open access": [
+            "Transparency and open access was ensured from the beginning"
+        ],
+        "Data management plan": [
+            "Data management plan was implemented/followed"
+        ],
+        "Visibility": [
+            "Visibility was given on the different phases of innovation process"
+        ]
+    },
+    "D6. Governance": {
+        "External concerns": [
+            "External concerns are/were assessed"
+        ],
+        "Emerging perspectives": [
+            "Emerging perspectives are tracked and documented"
+        ],
+        "Public understanding scientific progress": [
+            "Innovation promotes the public understanding about scientific progress"
+        ],
+        "Crowdsourcing open innovation": [
+            "Crowdsourcing and open innovation are encouraged and facilitated"
+        ],
+        "Ongoing monitoring": [
+            "Ongoing monitoring, with feedback loops, into positive and negative impacts of innovation decisions"
+        ]
+    },
+    "D7. Legal": {
+        "Regulatory compliance": [
+            "The innovation is regulatory compliant"
+        ],
+        "GDPR compliance": [
+            "GDPR compliance is assessed"
+        ]
+    },
+    "D8. Ethical": {
+        "External ethics expert": [
+            "External research ethics expert or ethics committee are considered"
+        ],
+        "Codes of conduct": [
+            "Codes of conduct are applied and followed"
+        ],
+        "Ethical issues human participation": [
+            "Ethical issues related to human participation are considered"
+        ],
+        "Ethical issues personal data": [
+            "Ethical issues related to personal data are followed"
+        ],
+        "Disclosure conflicts of interest": [
+            "Disclosure of potential conflicts of interest are asked"
+        ],
+        "Disclosure funding sources": [
+            "Discolsure of research and innovation funding sources are asked"
+        ]
+    },
+    "D9. Environmental": {
+        "Environmental impacts": [
+            "Environmental impacts of the innovation are assesed"
+        ],
+        "Impact natural capital": [
+            "Impact in natural capital is assessed"
+        ],
+        "Alleviate environmental issues": [
+            "The innovation alleviate environmental issues"
+        ],
+        "Circular use of resources": [
+            "The innovation promotes a circular use of resources"
+        ]
+    },
+    "D10. Social": {
+        "Human animal health impacts": [
+            "Human and animal health impacts are assessed"
+        ],
+        "Equal access disabled people": [
+            "The innovation promotes equal access for disabled people"
+        ],
+        "Addresses vulnerable people": [
+            "The innovation addresses vulnerable people"
+        ],
+        "Addresses social needs": [
+            "The innovation addresses social needs"
+        ],
+        "Societal trends challenges": [
+            "Societal trends and challenges are observed and considered"
+        ]
+    },
+    "D11. Economic": {
+        "Local economic development": [
+            "Local economic and development impacts are considered"
+        ],
+        "Improves competitiveness": [
+            "The innovation improves competitiveness"
+        ],
+        "Frugality management": [
+            "Frugality, as a careful management of material resources, is a target of the innovation process"
+        ],
+        "Contributes GDP": [
+            "The innovation process or result contributes do GDP"
+        ]
+    },
+    "D12. Technological": {
+        "Development technological products": [
+            "The innovation promotes the development of new technological products/services"
+        ],
+        "Potential misuse prevention": [
+            "The innovation process questiones the potencial misuses of technological developments and how to prevent it"
+        ],
+        "Digital transformation": [
+            "The innovation promotes digital transformation"
+        ]
+    },
+    "D13. Organizational": {
+        "Diverse working approaches": [
+            "The innovation promotes diverse working approaches"
+        ],
+        "Responsible innovation management": [
+            "A responsible innovation management system is available"
+        ],
+        "Corporate social responsibility": [
+            "A corporate social responsibility is implemented by the organization/project team"
+        ],
+        "Responsible business models": [
+            "Responsible business model(s) are promoted by the implementation of the innovation"
+        ],
+        "Organizational learning capabilities": [
+            "The innovation improves organizational learning capabilities"
+        ],
+        "Cross functional teams": [
+            "Cross-functional teams are promoted"
+        ]
+    },
+    "D14. Educational": {
+        "Contributes science education": [
+            "The innovation contributes to science education"
+        ],
+        "Contributes science literacy": [
+            "The innovation contributes to science literacy"
+        ],
+        "RRI workshops training": [
+            "RRI workshops and training are promoted"
+        ]
+    },
+    "D15. Industrial": {
+        "Products life cycle improvements": [
+            "The innovation promotes products' life cycle improvements"
+        ],
+        "Targets circularity": [
+            "The innovation targets circularity"
+        ],
+        "Knowledge transfer": [
+            "Knowledge transfer processes with the industry are implemented"
+        ]
+    },
+    "D16. Entrepreneurial": {
+        "Sustainable value proposition": [
+            "How to develop a sustainable value proposition in Industry 5.0"
+        ],
+        "Entrepreneurial behavior": [
+            "Entrepreneurial behavior is promoted and rewarded"
+        ],
+        "Innovation value proposition": [
+            "The value proposistion of the innovation is clear"
+        ],
+        "Idea management platform": [
+            "Idea management platform is implemented in the organization"
+        ]
+    }
+}

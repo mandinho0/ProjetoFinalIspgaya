@@ -1,0 +1,3 @@
+// criar estrutura na bd 
+// criar script para carregar as questoes na bd
+criar components dinamicos a ir á DB buscar as questoes

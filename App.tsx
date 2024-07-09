@@ -7,6 +7,7 @@ import Login from './app/screens/Login';
 import Homepage from './app/screens/Homepage';
 import QuestionnaireForm from './app/screens/QuestionnaireForm';
 import SignUp from './app/screens/SignUp';
+import SummaryScreen from './app/screens/SummaryScreen';
 
 const Stack = createNativeStackNavigator();
 
@@ -20,6 +21,7 @@ export default function App() {
             <Stack.Screen name='SignUp' component={SignUp} options={{ headerShown: false }} />
             <Stack.Screen name='Homepage' component={Homepage} options={{ headerShown: false }} />
             <Stack.Screen name='QuestionnaireForm' component={QuestionnaireForm} options={{ headerShown: false }} />
+            <Stack.Screen name='SummaryScreen ' component={SummaryScreen} options={{ headerShown: false }} />
           </Stack.Navigator>
         </NavigationContainer>
         <StatusBar style="auto" />

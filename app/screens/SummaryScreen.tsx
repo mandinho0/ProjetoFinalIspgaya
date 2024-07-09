@@ -3,33 +3,22 @@ import { View, Text, Button, StyleSheet } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { insertDataToFirestore } from '../../insertDefaultQuestions';
 
-const Homepage: React.FC = () => {
+const SummaryScreen: React.FC = () => {
   const navigation = useNavigation();
 
   const navigateToViewEvaluations = () => {
     navigation.navigate('ViewEvaluations' as never); // Defina este nome com base no seu roteamento
   };
 
-  const navigateToCreateEvaluation = () => {
-    navigation.navigate('QuestionnaireForm' as never); // Defina este nome com base no seu roteamento
-  };
-
-  // Insert default data on firestore only once
-  //insertDataToFirestore();
-
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Bem-vindo ao Sistema de Avaliações</Text>
+      <Text style={styles.title}>Summary Screen</Text>
       <Text style={styles.info}>
-        Aqui pode visualizar todas as avaliações ou criar uma nova avaliação.
+        Your avaliation was successfully submitted
       </Text>
       <Button
         title="Ver Avaliações"
         onPress={navigateToViewEvaluations}
-      />
-      <Button
-        title="Criar Nova Avaliação"
-        onPress={navigateToCreateEvaluation}
       />
     </View>
   );
@@ -57,4 +46,4 @@ const styles = StyleSheet.create({
   }
 });
 
-export default Homepage;
+export default SummaryScreen;

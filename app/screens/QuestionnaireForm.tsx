@@ -1,135 +1,143 @@
-import React, { useState } from 'react';
-import { View, Text, Button, ScrollView } from 'react-native';
-import { RadioButton } from 'react-native-paper';
-import { collection, addDoc } from "firebase/firestore";
-import { FIREBASE_AUTH, FIREBASE_DB } from '../../firebase';
+import React, { useState, useEffect } from 'react';
+import { View, Text, ScrollView, KeyboardAvoidingView, Platform, StyleSheet, TouchableOpacity, ActivityIndicator, Pressable } from 'react-native';
+import { collection, getDocs, addDoc } from 'firebase/firestore';
+import { FIREBASE_DB } from '../../firebase';
+import { Responses, RadioChangeHandler } from '../../types';
 
-type Responses = {
-  [key: string]: {
-    [key: string]: string | null;
-  };
-};
-
-const options = [
-  { value: '7', label: 'strongly agree' },
-  { value: '6', label: 'moderately agree' },
-  { value: '5', label: 'agree' },
-  { value: '4', label: 'neither agree nor disagree' },
-  { value: '3', label: 'disagree' },
-  { value: '2', label: 'moderately disagree' },
-  { value: '1', label: 'strongly disagree' }
+const options = ['SA', 'MA', 'A', 'NAD', 'D', 'MD', 'SD'];
+const optionLabels = [
+  'Strongly Agree (SA)', 'Moderately Agree (MA)', 'Agree (A)',
+  'Neither Agree nor Disagree (NAD)', 'Disagree (D)',
+  'Moderately Disagree (MD)', 'Strongly Disagree (SD)'
 ];
 
 const QuestionnaireForm: React.FC = () => {
-  const [responses, setResponses] = useState<Responses>({
-    D1_Anticipation: {
-      Foresight: null,
-      Result_Responsible_Usage: null,
-      Pro_active_impact_assessment: null
-    },
-    D2_Reflection: {
-      Future_Scenario: null,
-      Social_Science_Creativity: null,
-      Risk_management: null,
-      Risk_report: null,
-      Conflict_management: null
-    },
-    D3_Inclusion: {
-      User_center_design: null,
-      Participative_research_methods: null,
-      Representatives_of_4_helix: null,
-      Gender_equality: null,
-      Equality_Diversity_Inclusion_Policy: null,
-      Exchanging_views: null
-    },
-    D4_Responsiveness: {
-      Contingency_plans: null,
-      Real_needs_research_questions: null,
-      Innovation_process_adaptation: null,
-      SDG_alignment: null
-    },
-    D5_Transparency: {
-      Transparency_open_access: null,
-      Data_management_plan: null,
-      Visibility: null
-    },
-    D6_Governance: {
-      External_concerns: null,
-      Emerging_perspectives: null,
-      Public_understanding_scientific_progress: null,
-      Crowdsourcing_open_innovation: null,
-      Ongoing_monitoring: null
-    },
-    D7_Legal: {
-      Regulatory_compliance: null,
-      GDPR_compliance: null
-    },
-    D8_Ethical: {
-      External_ethics_expert: null,
-      Codes_of_conduct: null,
-      Ethical_issues_human_participation: null,
-      Ethical_issues_personal_data: null,
-      Disclosure_conflicts_of_interest: null,
-      Disclosure_funding_sources: null
-    },
-    D9_Environmental: {
-      Environmental_impacts: null,
-      Impact_natural_capital: null,
-      Alleviate_environmental_issues: null,
-      Circular_use_of_resources: null
-    },
-    D10_Social: {
-      Human_animal_health_impacts: null,
-      Equal_access_disabled_people: null,
-      Addresses_vulnerable_people: null,
-      Addresses_social_needs: null,
-      Societal_trends_challenges: null
-    },
-    D11_Economic: {
-      Local_economic_development: null,
-      Improves_competitiveness: null,
-      Frugality_management: null,
-      Contributes_GDP: null
-    },
-    D12_Technological: {
-      Development_technological_products: null,
-      Potential_misuse_prevention: null,
-      Digital_transformation: null
-    },
-    D13_Organizational: {
-      Diverse_working_approaches: null,
-      Responsible_innovation_management: null,
-      Corporate_social_responsibility: null,
-      Responsible_business_models: null,
-      Organizational_learning_capabilities: null,
-      Cross_functional_teams: null
-    },
-    D14_Educational: {
-      Contributes_science_education: null,
-      Contributes_science_literacy: null,
-      RRI_workshops_training: null
-    },
-    D15_Industrial: {
-      Products_life_cycle_improvements: null,
-      Targets_circularity: null,
-      Knowledge_transfer: null
-    },
-    D16_Entrepreneurial: {
-      Sustainable_value_proposition: null,
-      Entrepreneurial_behavior: null,
-      Innovation_value_proposition: null,
-      Idea_management_platform: null
-    }
-  });
+  const [currentScreen, setCurrentScreen] = useState<number>(0);
+  const [responses, setResponses] = useState<Responses>({});
+  const [questions, setQuestions] = useState<any>({});
+  const [loading, setLoading] = useState<boolean>(true);
+  const [totalDimensions, setTotalDimensions] = useState<number>(0);
+  const [orderedDimensions, setOrderedDimensions] = useState<any[]>([]);
 
-  const handleRadioChange = (dimension: string, subDimension: string, value: string) => {
-    setResponses(prevState => ({
+  useEffect(() => {
+    fetchTotalDimensions();
+  }, []);
+
+  useEffect(() => {
+    if (orderedDimensions.length > 0) {
+      fetchQuestions(currentScreen);
+    }
+  }, [currentScreen, orderedDimensions]);
+
+  const fetchTotalDimensions = async () => {
+    setLoading(true);
+    try {
+      const dimensionsSnapshot = await getDocs(collection(FIREBASE_DB, 'dimensions'));
+      const dimensions = dimensionsSnapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data()
+      }));
+
+      // Order dimensions numerically by extracting the numeric part
+      const ordered = dimensions.sort((a, b) => {
+        const numA = parseInt(a.id.replace(/\D/g, ''), 10);
+        const numB = parseInt(b.id.replace(/\D/g, ''), 10);
+        return numA - numB;
+      });
+
+      setOrderedDimensions(ordered);
+      setTotalDimensions(ordered.length);
+      setLoading(false);
+    } catch (e) {
+      console.error("Error fetching dimensions count: ", e);
+      setLoading(false);
+    }
+  };
+
+  const fetchQuestions = async (screenIndex: number) => {
+    setLoading(true);
+    try {
+      const dimensionDoc = orderedDimensions[screenIndex];
+      if (dimensionDoc) {
+        const subDimensionsSnapshot = await getDocs(collection(FIREBASE_DB, `dimensions/${dimensionDoc.id}/subDimensions`));
+        const fetchedQuestions: any = {};
+        fetchedQuestions[dimensionDoc.id] = {};
+        for (const subDimensionDoc of subDimensionsSnapshot.docs) {
+          const questionsSnapshot = await getDocs(collection(FIREBASE_DB, `dimensions/${dimensionDoc.id}/subDimensions/${subDimensionDoc.id}/questions`));
+          fetchedQuestions[dimensionDoc.id][subDimensionDoc.id] = [];
+          for (const questionDoc of questionsSnapshot.docs) {
+            fetchedQuestions[dimensionDoc.id][subDimensionDoc.id].push(questionDoc.data().question);
+          }
+        }
+        setQuestions((prevQuestions: any) => ({
+          ...prevQuestions,
+          ...fetchedQuestions
+        }));
+      }
+    } catch (e) {
+      console.error("Error fetching questions: ", e);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleRadioChange: RadioChangeHandler = (dimension, subDimension, value) => {
+    setResponses((prevState) => ({
       ...prevState,
       [dimension]: {
         ...prevState[dimension],
-        [subDimension]: value
-      }
+        [subDimension]: value,
+      },
     }));
+  };
+
+  const renderScreen = (dimension: string, subDimensions: any) => (
+    <View key={dimension}>
+      <Text style={styles.dimensionTitle}>{dimension.replaceAll('%20', ' ')}</Text>
+      {Object.entries(subDimensions).map(([subDimension, questions]: [string, any]) => (
+        <View key={subDimension} style={styles.subDimension}>
+          <Text style={styles.subDimensionTitle}>{subDimension.replaceAll('%20', ' ').replaceAll('%2', ' ')}</Text>
+          {questions.map((question: string, index: number) => (
+            <View key={index} style={styles.question}>
+              <Text style={styles.questionText}>{question}</Text>
+              <View style={styles.radioContainer}>
+                {options.map((option, idx) => (
+                  <TouchableOpacity
+                    key={idx}
+                    style={[
+                      styles.radioOption,
+                      responses[dimension]?.[subDimension] === option && styles.radioOptionSelected
+                    ]}
+                    onPress={() => handleRadioChange(dimension, subDimension, option)}
+                  >
+                    <Text style={styles.radioLabel}>{option}</Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+            </View>
+          ))}
+        </View>
+      ))}
+      <View style={styles.optionMapping}>
+        {optionLabels.map((label, idx) => (
+          <Text key={idx} style={styles.optionLabel}>{label}</Text>
+        ))}
+      </View>
+    </View>
+  );
+
+  const screens = Object.entries(questions).map(([dimension, subDimensions]) => renderScreen(dimension, subDimensions));
+
+  const nextScreen = () => {
+    if (currentScreen < totalDimensions - 1) {
+      setCurrentScreen(currentScreen + 1);
+    }
+  };
+
+  const prevScreen = () => {
+    if (currentScreen > 0) {
+      setCurrentScreen(currentScreen - 1);
+    }
   };
 
   const submitQuestionnaire = async () => {
@@ -145,51 +153,156 @@ const QuestionnaireForm: React.FC = () => {
     }
   };
 
+  if (loading) {
+    return (
+      <View style={styles.loadingContainer}>
+        <ActivityIndicator size="large" color="#007bff" />
+      </View>
+    );
+  }
+
   return (
-    <ScrollView>
-      <View>
-        <Text>Foresight</Text>
-        {options.map(option => (
-          <View key={option.value} style={{ flexDirection: 'row', alignItems: 'center' }}>
-            <RadioButton
-              value={option.value}
-              status={responses.D1_Anticipation.Foresight === option.value ? 'checked' : 'unchecked'}
-              onPress={() => handleRadioChange('D1_Anticipation', 'Foresight', option.value)}
-            />
-            <Text>{option.label}</Text>
+    <KeyboardAvoidingView
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      style={styles.container}
+    >
+      <ScrollView 
+        showsHorizontalScrollIndicator={false}
+        contentContainerStyle={styles.scrollContainer}
+        keyboardShouldPersistTaps="handled"
+      ><Pressable>
+          <Text style={styles.headerText}>Questionnaire Form</Text>
+          <View style={styles.formContainer}>
+            {screens[currentScreen]}
+            <View style={styles.buttons}>
+              <TouchableOpacity
+                style={[styles.button, styles.buttonSecondary]}
+                onPress={prevScreen}
+                disabled={currentScreen === 0}
+              >
+                <Text style={styles.buttonText}>Previous</Text>
+              </TouchableOpacity>
+              {currentScreen === totalDimensions - 1 ? (
+                <TouchableOpacity style={[styles.button, styles.buttonSubmit]} onPress={submitQuestionnaire}>
+                  <Text style={styles.buttonText}>Submit</Text>
+                </TouchableOpacity>
+              ) : (
+                <TouchableOpacity style={[styles.button, styles.buttonPrimary]} onPress={nextScreen}>
+                  <Text style={styles.buttonText}>Next</Text>
+                </TouchableOpacity>
+              )}
+            </View>
           </View>
-        ))}
-      </View>
-      <View>
-        <Text>Result Responsible Usage</Text>
-        {options.map(option => (
-          <View key={option.value} style={{ flexDirection: 'row', alignItems: 'center' }}>
-            <RadioButton
-              value={option.value}
-              status={responses.D1_Anticipation.Result_Responsible_Usage === option.value ? 'checked' : 'unchecked'}
-              onPress={() => handleRadioChange('D1_Anticipation', 'Result_Responsible_Usage', option.value)}
-            />
-            <Text>{option.label}</Text>
-          </View>
-        ))}
-      </View>
-      <View>
-        <Text>Pro-active impact assessment</Text>
-        {options.map(option => (
-          <View key={option.value} style={{ flexDirection: 'row', alignItems: 'center' }}>
-            <RadioButton
-              value={option.value}
-              status={responses.D1_Anticipation.Pro_active_impact_assessment === option.value ? 'checked' : 'unchecked'}
-              onPress={() => handleRadioChange('D1_Anticipation', 'Pro_active_impact_assessment', option.value)}
-            />
-            <Text>{option.label}</Text>
-          </View>
-        ))}
-      </View>
-      {/* Continue adicionando outros campos de forma similar para cada sub-dimensão */}
-      <Button title="Submit" onPress={submitQuestionnaire} />
-    </ScrollView>
+        </Pressable>
+      </ScrollView>
+    </KeyboardAvoidingView>
   );
 };
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+  },
+  scrollContainer: {
+    flexGrow: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingVertical: 20,
+    backgroundColor: '#000115',
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  headerText: {
+    fontSize: 28,
+    fontWeight: 'bold',
+    color: '#FFFFFF',
+    marginBottom: 20,
+    textAlign: 'center',
+    marginTop: 48
+  },
+  formContainer: {
+    width: '100%',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+  },
+  dimensionTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    marginBottom: 32,
+    textAlign: 'center',
+    color: 'orange'
+  },
+  subDimension: {
+    marginBottom: 20,
+  },
+  subDimensionTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#FFFFFF',
+    marginBottom: 5,
+  },
+  question: {
+    backgroundColor: '#1c1c2e',
+    padding: 10,
+    borderRadius: 5,
+    marginBottom: 5,
+  },
+  questionText: {
+    color: '#FFFFFF',
+  },
+  radioContainer: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    marginTop: 10,
+  },
+  radioOption: {
+    padding: 5,
+    margin: 5,
+    backgroundColor: '#444',
+    borderRadius: 5,
+  },
+  radioOptionSelected: {
+    backgroundColor: 'orange',
+  },
+  radioLabel: {
+    color: '#FFFFFF',
+  },
+  buttons: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    padding: 16,
+    marginTop: 20,
+    width: '100%', // Add width to buttons container
+  },
+  button: {
+    paddingVertical: 10,
+    paddingHorizontal: 20,
+    borderRadius: 5,
+    alignItems: 'center',
+  },
+  buttonPrimary: {
+    backgroundColor: '#007bff',
+  },
+  buttonSecondary: {
+    backgroundColor: '#6c757d',
+  },
+  buttonSubmit: {
+    backgroundColor: 'green'
+  },
+  buttonText: {
+    color: '#fff',
+    fontWeight: 'bold',
+  },
+  optionMapping: {
+    marginTop: 20,
+  },
+  optionLabel: {
+    color: '#FFFFFF',
+    marginBottom: 5,
+  },
+});
 
 export default QuestionnaireForm;
