@@ -12,11 +12,14 @@ import {
   Platform
 } from 'react-native';
 import { createUserWithEmailAndPassword, fetchSignInMethodsForEmail } from 'firebase/auth';
+import { getFirestore, doc, setDoc } from 'firebase/firestore'; 
 import { FIREBASE_AUTH } from '../../firebase';
 import { useNavigation } from '@react-navigation/native';
 import logo from '../assets/logoInova.jpg';
 
 const SignUp = () => {
+  const [firstName, setFirstName] = useState('');
+  const [lastName, setLastName] = useState('');
   const [email, setEmail] = useState('');
   const [emailError, setEmailError] = useState('');
   const [password, setPassword] = useState('');
@@ -29,7 +32,12 @@ const SignUp = () => {
   const [isBackButtonVisible, setIsBackButtonVisible] = useState(true);
 
   const auth = FIREBASE_AUTH;
+  const firestore = getFirestore(); // Get Firestore instance
   const navigation = useNavigation();
+
+  const navigateToHomePage = () => {
+    navigation.navigate('Homepage' as never);
+  };
 
   const handleEmailFocus = () => {
     setIsEmailFocused(true);
@@ -87,7 +95,19 @@ const SignUp = () => {
         return;
       }
       
-      await createUserWithEmailAndPassword(auth, email, password);
+      const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+      const user = userCredential.user;
+
+      // Save additional user info to Firestore
+      await setDoc(doc(firestore, 'users', user.uid), {
+        firstName: firstName,
+        lastName: lastName,
+        email: email,
+        userId: user.uid,
+      });
+
+      navigateToHomePage();
+
       alert('Account created successfully!');
     } catch (error) {
       console.log(error);
@@ -153,6 +173,20 @@ const SignUp = () => {
       >
         <View style={styles.inner}>
           <Image source={logo} style={styles.logo} />
+          <TextInput
+            value={firstName}
+            style={inputStyles.input}
+            placeholder='First Name'
+            autoCapitalize='none'
+            onChangeText={(text) => setFirstName(text)}
+          />
+          <TextInput
+            value={lastName}
+            style={inputStyles.input}
+            placeholder='Last Name'
+            autoCapitalize='none'
+            onChangeText={(text) => setLastName(text)}
+          />
           <TextInput
             value={email}
             style={[inputStyles.input, emailError ? inputStyles.inputError : null]}

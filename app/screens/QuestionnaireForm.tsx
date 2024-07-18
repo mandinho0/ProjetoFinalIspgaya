@@ -1,8 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, ScrollView, KeyboardAvoidingView, Platform, StyleSheet, TouchableOpacity, ActivityIndicator, Pressable } from 'react-native';
+import { View, Text, ScrollView, KeyboardAvoidingView, Platform, StyleSheet, TouchableOpacity, ActivityIndicator, TextInput, Pressable, Alert } from 'react-native';
 import { collection, getDocs, addDoc } from 'firebase/firestore';
 import { FIREBASE_DB } from '../../firebase';
 import { Responses, RadioChangeHandler } from '../../types';
+import { useNavigation, NavigationProp } from '@react-navigation/native';
+import { RootStackParamList } from '../../types';
+import { useAuth } from '../context/AuthContext';
 
 const options = ['SA', 'MA', 'A', 'NAD', 'D', 'MD', 'SD'];
 const optionLabels = [
@@ -12,12 +15,19 @@ const optionLabels = [
 ];
 
 const QuestionnaireForm: React.FC = () => {
+  const { user } = useAuth();
   const [currentScreen, setCurrentScreen] = useState<number>(0);
   const [responses, setResponses] = useState<Responses>({});
   const [questions, setQuestions] = useState<any>({});
   const [loading, setLoading] = useState<boolean>(true);
+  const [questionsLoading, setQuestionsLoading] = useState<boolean>(true);
   const [totalDimensions, setTotalDimensions] = useState<number>(0);
   const [orderedDimensions, setOrderedDimensions] = useState<any[]>([]);
+  const [projectName, setProjectName] = useState<string>('');
+  const [innovationArea, setInnovationArea] = useState<string>('');
+  const [introCompleted, setIntroCompleted] = useState<boolean>(false);
+  const [error, setError] = useState<string | null>(null);
+  const navigation = useNavigation<NavigationProp<RootStackParamList>>();
 
   useEffect(() => {
     fetchTotalDimensions();
@@ -38,7 +48,6 @@ const QuestionnaireForm: React.FC = () => {
         ...doc.data()
       }));
 
-      // Order dimensions numerically by extracting the numeric part
       const ordered = dimensions.sort((a, b) => {
         const numA = parseInt(a.id.replace(/\D/g, ''), 10);
         const numB = parseInt(b.id.replace(/\D/g, ''), 10);
@@ -55,7 +64,7 @@ const QuestionnaireForm: React.FC = () => {
   };
 
   const fetchQuestions = async (screenIndex: number) => {
-    setLoading(true);
+    setQuestionsLoading(true);
     try {
       const dimensionDoc = orderedDimensions[screenIndex];
       if (dimensionDoc) {
@@ -77,7 +86,7 @@ const QuestionnaireForm: React.FC = () => {
     } catch (e) {
       console.error("Error fetching questions: ", e);
     } finally {
-      setLoading(false);
+      setQuestionsLoading(false);
     }
   };
 
@@ -91,9 +100,61 @@ const QuestionnaireForm: React.FC = () => {
     }));
   };
 
+  const handleIntroSubmit = () => {
+    setIntroCompleted(true);
+  };
+
+  const validateResponses = () => {
+    const dimension = orderedDimensions[currentScreen]?.id;
+    if (!dimension) return false;
+
+    const subDimensions = questions[dimension];
+    if (!subDimensions) return false;
+
+    for (const subDimension in subDimensions) {
+      if (!responses[dimension] || !responses[dimension][subDimension]) {
+        return false;
+      }
+    }
+    return true;
+  };
+
+  const renderIntro = () => (
+    <View style={styles.introContainer}>
+      <Text style={styles.headerText}>Project Information</Text>
+      <TextInput
+        style={styles.input}
+        placeholder="Project Name"
+        placeholderTextColor="#999"
+        value={projectName}
+        onChangeText={setProjectName}
+      />
+      <TextInput
+        style={styles.input}
+        placeholder="Area of Innovation"
+        placeholderTextColor="#999"
+        value={innovationArea}
+        onChangeText={setInnovationArea}
+      />
+      <TouchableOpacity style={[styles.button, styles.buttonPrimary]} onPress={handleIntroSubmit} disabled={!projectName || !innovationArea}>
+        <Text style={styles.buttonText}>Start Questionnaire</Text>
+      </TouchableOpacity>
+    </View>
+  );
+
   const renderScreen = (dimension: string, subDimensions: any) => (
     <View key={dimension}>
       <Text style={styles.dimensionTitle}>{dimension.replaceAll('%20', ' ')}</Text>
+      
+      <View style={styles.optionMapping}>
+        <Text style={styles.optionMappingTitle}>Options Info:</Text>
+        <Text style={styles.optionLabel}>A: Agree</Text>
+        <Text style={styles.optionLabel}>D: Disagree</Text>
+        <Text style={styles.optionLabel}>S: Strongly</Text>
+        <Text style={styles.optionLabel}>M: Moderately</Text>
+        <Text style={styles.optionLabel}>NAD: Neither Agree or Disagree</Text>
+      </View>
+      
       {Object.entries(subDimensions).map(([subDimension, questions]: [string, any]) => (
         <View key={subDimension} style={styles.subDimension}>
           <Text style={styles.subDimensionTitle}>{subDimension.replaceAll('%20', ' ').replaceAll('%2', ' ')}</Text>
@@ -118,19 +179,19 @@ const QuestionnaireForm: React.FC = () => {
           ))}
         </View>
       ))}
-      <View style={styles.optionMapping}>
-        {optionLabels.map((label, idx) => (
-          <Text key={idx} style={styles.optionLabel}>{label}</Text>
-        ))}
-      </View>
     </View>
   );
 
   const screens = Object.entries(questions).map(([dimension, subDimensions]) => renderScreen(dimension, subDimensions));
 
   const nextScreen = () => {
-    if (currentScreen < totalDimensions - 1) {
-      setCurrentScreen(currentScreen + 1);
+    if (validateResponses()) {
+      setError(null);
+      if (currentScreen < totalDimensions - 1) {
+        setCurrentScreen(currentScreen + 1);
+      }
+    } else {
+      setError('Please answer all questions before proceeding.');
     }
   };
 
@@ -141,23 +202,53 @@ const QuestionnaireForm: React.FC = () => {
   };
 
   const submitQuestionnaire = async () => {
-    try {
-      const questionnaireData = {
-        questionnaire_id: "unique_id_" + Date.now(),
-        responses: responses
-      };
-      const docRef = await addDoc(collection(FIREBASE_DB, "questionnaires"), questionnaireData);
-      console.log("Questionnaire submitted with ID: ", docRef.id);
-    } catch (e) {
-      console.error("Error submitting questionnaire: ", e);
+    if (validateResponses()) {
+      setError(null);
+      try {
+        if (!user) {
+          throw new Error('User not authenticated');
+        }
+
+        const questionnaireData = {
+          questionnaire_id: "unique_id_" + Date.now(),
+          userId: user.uid,
+          projectName,
+          innovationArea,
+          responses
+        };
+        const docRef = await addDoc(collection(FIREBASE_DB, "questionnaires"), questionnaireData);
+        console.log("Questionnaire submitted to project: ", questionnaireData.projectName);
+        navigation.navigate('ViewEvaluations', { projectName: questionnaireData.projectName });
+      } catch (e) {
+        console.error("Error submitting questionnaire: ", e);
+      }
+    } else {
+      setError('Please answer all questions before submitting.');
     }
   };
 
-  if (loading) {
+  if (loading || questionsLoading) {
     return (
       <View style={styles.loadingContainer}>
         <ActivityIndicator size="large" color="#007bff" />
       </View>
+    );
+  }
+
+  if (!introCompleted) {
+    return (
+      <KeyboardAvoidingView
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        style={styles.container}
+      >
+        <ScrollView 
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.scrollContainer}
+          keyboardShouldPersistTaps="handled"
+        >
+          {renderIntro()}
+        </ScrollView>
+      </KeyboardAvoidingView>
     );
   }
 
@@ -170,10 +261,12 @@ const QuestionnaireForm: React.FC = () => {
         showsHorizontalScrollIndicator={false}
         contentContainerStyle={styles.scrollContainer}
         keyboardShouldPersistTaps="handled"
-      ><Pressable>
+      >
+        <Pressable>
           <Text style={styles.headerText}>Questionnaire Form</Text>
           <View style={styles.formContainer}>
             {screens[currentScreen]}
+            {error && <Text style={styles.errorText}>{error}</Text>}
             <View style={styles.buttons}>
               <TouchableOpacity
                 style={[styles.button, styles.buttonSecondary]}
@@ -215,6 +308,12 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
+  introContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+  },
   headerText: {
     fontSize: 28,
     fontWeight: 'bold',
@@ -222,6 +321,17 @@ const styles = StyleSheet.create({
     marginBottom: 20,
     textAlign: 'center',
     marginTop: 48
+  },
+  input: {
+    width: '100%',
+    height: 50,
+    padding: 10,
+    borderWidth: 1,
+    borderColor: '#999',
+    borderRadius: 5,
+    marginBottom: 20,
+    color: '#FFFFFF',
+    backgroundColor: '#333',
   },
   formContainer: {
     width: '100%',
@@ -275,7 +385,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     padding: 16,
     marginTop: 20,
-    width: '100%', // Add width to buttons container
+    width: '100%',
   },
   button: {
     paddingVertical: 10,
@@ -297,12 +407,29 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
   },
   optionMapping: {
-    marginTop: 20,
+    marginBottom: 25,
+    borderColor: 'orange',
+    borderWidth: 1,
+    borderRadius: 32,
+    padding: 16,
+    textAlign: 'center'
+  },
+  optionMappingTitle: {
+    fontSize: 14,
+    color: 'orange',
+    marginBottom: 10,
+    textAlign: 'center'
   },
   optionLabel: {
     color: '#FFFFFF',
     marginBottom: 5,
+    textAlign: 'center'
   },
+  errorText: {
+    color: 'red',
+    marginBottom: 10,
+    textAlign: 'center',
+  }
 });
 
 export default QuestionnaireForm;

@@ -7,11 +7,11 @@ const Homepage: React.FC = () => {
   const navigation = useNavigation();
 
   const navigateToViewEvaluations = () => {
-    navigation.navigate('ViewEvaluations' as never); // Defina este nome com base no seu roteamento
+    navigation.navigate('ViewEvaluations' as never); 
   };
 
   const navigateToCreateEvaluation = () => {
-    navigation.navigate('QuestionnaireForm' as never); // Defina este nome com base no seu roteamento
+    navigation.navigate('QuestionnaireForm' as never); 
   };
 
   // Insert default data on firestore only once

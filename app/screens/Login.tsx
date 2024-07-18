@@ -1,15 +1,18 @@
-import React, { useState } from 'react';
-import { View, TextInput, TouchableOpacity, Text, ActivityIndicator, StyleSheet, Image, ScrollView, KeyboardAvoidingView, Platform } from 'react-native';
+// Login.js
+import React, { useState, useCallback } from 'react';
+import { View, TextInput, TouchableOpacity, Text, ActivityIndicator, StyleSheet, Image, ScrollView, KeyboardAvoidingView, Platform, RefreshControl, Pressable } from 'react-native';
 import { signInWithEmailAndPassword } from 'firebase/auth';
 import { FIREBASE_AUTH } from '../../firebase';
 import { useNavigation } from '@react-navigation/native';
+import { useAuth } from '../context/AuthContext'; // Import the context
 import logo from '../assets/logoInova.jpg';
 
 const Login = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
-  const auth = FIREBASE_AUTH;
+  const [refreshing, setRefreshing] = useState(false);
+  const { setUser } = useAuth(); // Get setUser from the context
   const navigation = useNavigation(); 
 
   const navigateToSignUp = () => {
@@ -19,7 +22,8 @@ const Login = () => {
   const signIn = async () => {
     setLoading(true);
     try {
-      await signInWithEmailAndPassword(auth, email, password);
+      const userCredential = await signInWithEmailAndPassword(FIREBASE_AUTH, email, password);
+      setUser(userCredential.user); // Set the user in the context
       navigation.navigate('Homepage' as never); // Navigate to Homepage after successful sign-in
     } catch (error) {
       console.log(error);
@@ -29,6 +33,13 @@ const Login = () => {
     }
   };
 
+  const onRefresh = useCallback(() => {
+    setRefreshing(true);
+    setTimeout(() => {
+      setRefreshing(false);
+    }, 2000);
+  }, []);
+
   return (
     <KeyboardAvoidingView
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
@@ -37,46 +48,51 @@ const Login = () => {
       <ScrollView
         contentContainerStyle={styles.scrollContainer}
         keyboardShouldPersistTaps="handled"
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+        }
       >
-        <View style={styles.innerContainer}>
-          <Image source={logo} style={styles.logo} />
-          <TextInput
-            value={email}
-            style={styles.input}
-            placeholder='Email'
-            autoCapitalize='none'
-            onChangeText={(text) => setEmail(text)}
-          />
-          <TextInput
-            secureTextEntry={true}
-            value={password}
-            style={styles.input}
-            placeholder='Password'
-            autoCapitalize='none'
-            onChangeText={(text) => setPassword(text)}
-          />
+        <Pressable>
+          <View style={styles.innerContainer}>
+            <Image source={logo} style={styles.logo} />
+            <TextInput
+              value={email}
+              style={styles.input}
+              placeholder='Email'
+              autoCapitalize='none'
+              onChangeText={(text) => setEmail(text)}
+            />
+            <TextInput
+              secureTextEntry={true}
+              value={password}
+              style={styles.input}
+              placeholder='Password'
+              autoCapitalize='none'
+              onChangeText={(text) => setPassword(text)}
+            />
 
-          {loading ? (
-            <ActivityIndicator size='large' color='#0000ff' />
-          ) : (
-            <>
-              <View style={styles.signInContainer}>
-                <TouchableOpacity style={styles.button} onPress={signIn}>
-                  <Text style={styles.buttonText}>Login</Text>
-                </TouchableOpacity>
-              </View>
-              <View style={styles.signUpContainer}>
-                <Text style={styles.text}>Not registered yet? </Text>
-                <TouchableOpacity style={styles.buttonSignUp} onPress={navigateToSignUp}>
-                  <View style={styles.textWithUnderline}>
-                    <Text style={styles.buttonSignUpText}>Click here</Text>
-                    <View style={styles.underline} />
-                  </View>
-                </TouchableOpacity>
-              </View>
-            </>
-          )}
-        </View>
+            {loading ? (
+              <ActivityIndicator size='large' color='#0000ff' />
+            ) : (
+              <>
+                <View style={styles.signInContainer}>
+                  <TouchableOpacity style={styles.button} onPress={signIn}>
+                    <Text style={styles.buttonText}>Login</Text>
+                  </TouchableOpacity>
+                </View>
+                <View style={styles.signUpContainer}>
+                  <Text style={styles.text}>Not registered yet? </Text>
+                  <TouchableOpacity style={styles.buttonSignUp} onPress={navigateToSignUp}>
+                    <View style={styles.textWithUnderline}>
+                      <Text style={styles.buttonSignUpText}>Click here</Text>
+                      <View style={styles.underline} />
+                    </View>
+                  </TouchableOpacity>
+                </View>
+              </>
+            )}
+          </View>
+        </Pressable>
       </ScrollView>
     </KeyboardAvoidingView>
   );
