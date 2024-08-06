@@ -2,9 +2,10 @@
 import React, { useState, useCallback } from 'react';
 import { View, TextInput, TouchableOpacity, Text, ActivityIndicator, StyleSheet, Image, ScrollView, KeyboardAvoidingView, Platform, RefreshControl, Pressable } from 'react-native';
 import { signInWithEmailAndPassword } from 'firebase/auth';
-import { FIREBASE_AUTH } from '../../firebase';
+import { FIREBASE_AUTH, FIREBASE_DB } from '../../firebase';
 import { useNavigation } from '@react-navigation/native';
-import { useAuth } from '../context/AuthContext'; // Import the context
+import { useAuth } from '../context/AuthContext';
+import { doc, getDoc } from 'firebase/firestore';
 import logo from '../assets/logoInova.jpg';
 
 const Login = () => {
@@ -12,7 +13,7 @@ const Login = () => {
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
-  const { setUser } = useAuth(); // Get setUser from the context
+  const { setUser } = useAuth();
   const navigation = useNavigation(); 
 
   const navigateToSignUp = () => {
@@ -23,8 +24,20 @@ const Login = () => {
     setLoading(true);
     try {
       const userCredential = await signInWithEmailAndPassword(FIREBASE_AUTH, email, password);
-      setUser(userCredential.user); // Set the user in the context
-      navigation.navigate('Homepage' as never); // Navigate to Homepage after successful sign-in
+      const firebaseUser = userCredential.user;
+      const userDocRef = doc(FIREBASE_DB, 'users', firebaseUser.uid);
+      const userDoc = await getDoc(userDocRef);
+
+      let extendedUser = firebaseUser;
+
+      if (userDoc.exists()) {
+        const userData = userDoc.data();
+        extendedUser = { ...firebaseUser, ...userData };
+        console.log("Merged User Data on Login: ", extendedUser);
+      }
+
+      setUser(extendedUser);
+      navigation.navigate('ViewEvaluations' as never);
     } catch (error) {
       console.log(error);
       alert('Error signing in');

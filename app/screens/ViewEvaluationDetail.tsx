@@ -220,10 +220,16 @@ const ViewEvaluationDetail: React.FC = () => {
           ))}
           <View style={styles.downloadButtons}>
             <TouchableOpacity style={styles.button} onPress={createPDF}>
-              <Text style={styles.buttonText}>Download PDF</Text>
+              <Text style={styles.buttonContainer}>
+                <Text style={styles.buttonText}>Download PDF</Text>
+                <Icon name="download" size={20} color="#FFFFFF" style={styles.iconsDownload} />
+              </Text>
             </TouchableOpacity>
             <TouchableOpacity style={styles.button} onPress={createExcel}>
-              <Text style={styles.buttonText}>Download Excel</Text>
+              <Text style={styles.buttonContainer}>
+                <Text style={styles.buttonText}>Download Excel</Text>
+                <Icon name="download" size={20} color="#FFFFFF" style={styles.iconsDownload} />
+              </Text>
             </TouchableOpacity>
           </View>
         </Pressable>
@@ -309,7 +315,7 @@ const styles = StyleSheet.create({
     textAlign: 'center'
   },
   titleName: {
-    color: '#FFFFFF',
+    color: 'orange',
     fontSize: 20,
     padding: 12,
     fontWeight: '500'
@@ -341,19 +347,38 @@ const styles = StyleSheet.create({
   },
   downloadButtons: {
     marginTop: 20,
+    alignItems: 'center',
+    verticalAlign: 'middle'
+  },
+  buttonContainer: {
+    verticalAlign: 'middle',
+    justifyContent: 'space-between',
+    display: 'flex',
+    flexDirection: 'column'
   },
   button: {
-    backgroundColor: '#007bff',
+    backgroundColor: 'orange',
     padding: 15,
-    borderRadius: 5,
+    borderRadius: 8,
     alignItems: 'center',
     marginBottom: 10,
+    width: '70%',
+    verticalAlign: 'middle',
+    justifyContent: 'space-between'
   },
   buttonText: {
     color: '#FFFFFF',
     fontSize: 16,
     fontWeight: 'bold',
+    verticalAlign: 'middle',
+    paddingRight: 18,
+    justifyContent: 'space-between',
+    paddingBottom: 8
   },
+  iconsDownload: {
+    verticalAlign: 'middle',
+    justifyContent: 'space-between'
+  }
 });
 
 export default ViewEvaluationDetail;

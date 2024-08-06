@@ -104,6 +104,7 @@ const SignUp = () => {
         lastName: lastName,
         email: email,
         userId: user.uid,
+        role: 'user'
       });
 
       navigateToHomePage();

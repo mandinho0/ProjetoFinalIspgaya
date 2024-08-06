@@ -21,6 +21,10 @@ const ViewEvaluations: React.FC = () => {
   const { user } = useAuth();
   const [visible, setVisible] = useState<string | null>(null);
 
+  const navigateToCreateEvaluation = () => {
+    navigation.navigate('QuestionnaireForm' as never); 
+  };
+
   useEffect(() => {
     if (user) {
       fetchUserEvaluations(user.uid);
@@ -87,11 +91,18 @@ const ViewEvaluations: React.FC = () => {
               {projectName && (
                 <Text style={styles.projectMessage}>Evaluation submitted successfully: {projectName}</Text>
               )}
-              <Text style={styles.title}>Your Evaluations</Text>
+              <Text style={styles.title}>Evaluations</Text>
+              <TouchableOpacity onPress={() => navigateToCreateEvaluation()} style={styles.buttonAdd}>
+                <Text>
+                  <Text style={styles.buttonText}>Add new</Text>
+                  <Icon name="plus" size={16} color="gray"/>
+                </Text>
+              </TouchableOpacity>
               {evaluations.length > 0 ? (
                 evaluations.map((evaluation) => (
                   <View key={evaluation.id} style={styles.evaluationContainer}>
                     <Text style={styles.evaluationText}>{evaluation.projectName}</Text>
+                    
                     <Menu
                       visible={visible === evaluation.id}
                       onDismiss={closeMenu}
@@ -121,7 +132,6 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     justifyContent: 'flex-start',
-    alignItems: 'center',
     backgroundColor: '#000115',
     padding: 20,
   },
@@ -146,6 +156,23 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
     fontSize: 28,
     marginVertical: 30,
+    alignSelf: 'center'
+  },
+  buttonAdd: {
+    alignSelf: 'flex-end',
+    backgroundColor: 'white',
+    alignContent: 'center',
+    textAlignVertical: 'center',
+    paddingVertical: 4,
+    paddingHorizontal: 8,
+    borderRadius: 8
+  },
+  buttonText: {
+    fontSize: 16,
+    fontWeight: '500',
+    color: 'gray',
+    verticalAlign: 'middle',
+    marginRight: 8,
   },
   loadingContainer: {
     flex: 1,
