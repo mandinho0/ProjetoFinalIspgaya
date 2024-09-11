@@ -12,10 +12,12 @@ import {
   Platform
 } from 'react-native';
 import { createUserWithEmailAndPassword, fetchSignInMethodsForEmail } from 'firebase/auth';
-import { getFirestore, doc, setDoc } from 'firebase/firestore'; 
+import { getFirestore, doc, setDoc, collection, getDocs } from 'firebase/firestore'; 
 import { FIREBASE_AUTH } from '../../firebase';
 import { useNavigation } from '@react-navigation/native';
 import logo from '../assets/logoInova.jpg';
+import { Dropdown } from 'react-native-element-dropdown'; // Importar o Dropdown
+import { Enterprise } from '../../types';
 
 const SignUp = () => {
   const [firstName, setFirstName] = useState('');
@@ -25,64 +27,67 @@ const SignUp = () => {
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [passwordError, setPasswordError] = useState('');
+  const [enterpriseError, setEnterpriseError] = useState(''); // Novo estado para erro de seleção de empresa
   const [loading, setLoading] = useState(false);
   const [isEmailFocused, setIsEmailFocused] = useState(false);
   const [isPasswordFocused, setIsPasswordFocused] = useState(false);
   const [isConfirmPasswordFocused, setIsConfirmPasswordFocused] = useState(false);
-  const [isBackButtonVisible, setIsBackButtonVisible] = useState(true);
-
+  const [enterprises, setEnterprises] = useState<Enterprise[]>([]);
+  const [selectedEnterprise, setSelectedEnterprise] = useState<string>('');
   const auth = FIREBASE_AUTH;
-  const firestore = getFirestore(); // Get Firestore instance
+  const firestore = getFirestore();
   const navigation = useNavigation();
 
   const navigateToHomePage = () => {
-    navigation.navigate('Homepage' as never);
+    navigation.navigate('ViewEvaluations' as never);
   };
 
-  const handleEmailFocus = () => {
-    setIsEmailFocused(true);
-    setIsBackButtonVisible(false);
-  };
+  const validateFields = () => {
+    let isValid = true;
 
-  const handlePasswordFocus = () => {
-    setIsPasswordFocused(true);
-    setIsBackButtonVisible(false);
-  };
-
-  const handleConfirmPasswordFocus = () => {
-    setIsConfirmPasswordFocused(true);
-    setIsBackButtonVisible(false);
-  };
-
-  const handleEmailBlur = () => {
-    setIsEmailFocused(false);
-    setIsBackButtonVisible(true);
-  };
-
-  const handlePasswordBlur = () => {
-    setIsPasswordFocused(false);
-    setIsBackButtonVisible(true);
-  };
-
-  const handleConfirmPasswordBlur = () => {
-    setIsConfirmPasswordFocused(false);
-    setIsBackButtonVisible(true);
-  };
-
-  const validateEmail = (email: string) => {
-    const regex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    return regex.test(email);
-  };
-
-  const signUp = async () => {
-    if (!validateEmail(email)) {
-      setEmailError('Invalid email format');
+    if (!firstName.trim()) {
+      isValid = false;
+      alert('First name is required');
       return;
     }
 
-    if (password !== confirmPassword) {
-      setConfirmPassword('');
+    if (!lastName.trim()) {
+      isValid = false;
+      alert('Last name is required');
+      return;
+    }
+
+    if (!email.trim()) {
+      setEmailError('Email is required');
+      isValid = false;
+      return;
+    } else if (!validateEmail(email)) {
+      setEmailError('Invalid email format');
+      isValid = false;
+      return;
+    }
+
+    if (!password.trim()) {
+      setPasswordError('Password is required');
+      isValid = false;
+      return;
+    } else if (password !== confirmPassword) {
       setPasswordError('Passwords do not match');
+      isValid = false;
+      return;
+    }
+
+    if (!selectedEnterprise) {
+      setEnterpriseError('Please select an enterprise');
+      isValid = false;
+      return;
+    }
+
+    return isValid;
+  };
+
+  const signUp = async () => {
+    if (!validateFields()) {
       return;
     }
 
@@ -97,25 +102,33 @@ const SignUp = () => {
       
       const userCredential = await createUserWithEmailAndPassword(auth, email, password);
       const user = userCredential.user;
-
-      // Save additional user info to Firestore
+      
       await setDoc(doc(firestore, 'users', user.uid), {
         firstName: firstName,
         lastName: lastName,
         email: email,
         userId: user.uid,
+        enterpriseId: selectedEnterprise, 
         role: 'user'
       });
 
       navigateToHomePage();
 
       alert('Account created successfully!');
-    } catch (error) {
-      console.log(error);
-      alert('Error creating account');
+    } catch (error: any) {
+      if (error.code === 'auth/email-already-in-use') {
+        alert('Email already in use');
+      } else {
+        alert('Error creating account');
+      }
     } finally {
       setLoading(false);
     }
+  };
+
+  const validateEmail = (email: string) => {
+    const regex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return regex.test(email);
   };
 
   const handlePasswordChange = (text: string) => {
@@ -145,23 +158,19 @@ const SignUp = () => {
     }
   };
 
-  const [inputStyles, setInputStyles] = useState({
-    input: styles.input,
-    inputError: styles.inputError,
-    inputFocused: styles.inputFocused
-  });
-
   useEffect(() => {
-    const timer = setTimeout(() => {
-      setInputStyles({
-        input: styles.input,
-        inputError: styles.inputError,
-        inputFocused: styles.inputFocused
-      });
-    }, 100); // Delay to ensure styles are reapplied
-
-    return () => clearTimeout(timer);
-  }, [isPasswordFocused, isConfirmPasswordFocused]);
+    const fetchEnterprises = async () => {
+      const enterprisesCollection = collection(firestore, 'enterprises');
+      const enterprisesSnapshot = await getDocs(enterprisesCollection);
+      const enterprisesList: Enterprise[] = enterprisesSnapshot.docs.map(doc => ({
+        id: doc.id,
+        nome: doc.data().nome,
+      }));
+      setEnterprises(enterprisesList);
+    };
+  
+    fetchEnterprises();
+  }, []);
 
   return (
     <KeyboardAvoidingView
@@ -174,69 +183,76 @@ const SignUp = () => {
       >
         <View style={styles.inner}>
           <Image source={logo} style={styles.logo} />
+
+          <Text style={styles.text}>Enterprise</Text>
+          <Dropdown
+            data={enterprises.map((enterprise) => ({ label: enterprise.nome, value: enterprise.id }))}
+            labelField="label"
+            valueField="value"
+            placeholder="Select a company"
+            value={selectedEnterprise}
+            onChange={item => {
+              setSelectedEnterprise(item.value);
+              setEnterpriseError('');
+            }}
+            style={styles.dropdown}
+          />
+          {enterpriseError ? <Text style={styles.errorMessage}>{enterpriseError}</Text> : null}
+
+          <Text style={styles.text}>Name</Text>
           <TextInput
             value={firstName}
-            style={inputStyles.input}
+            style={styles.input}
             placeholder='First Name'
             autoCapitalize='none'
             onChangeText={(text) => setFirstName(text)}
           />
           <TextInput
             value={lastName}
-            style={inputStyles.input}
+            style={styles.input}
             placeholder='Last Name'
             autoCapitalize='none'
             onChangeText={(text) => setLastName(text)}
           />
+
+          <Text style={styles.text}>Email</Text>
           <TextInput
             value={email}
-            style={[inputStyles.input, emailError ? inputStyles.inputError : null]}
+            style={[styles.input, emailError ? styles.inputError : null]}
             placeholder='New Email'
             autoCapitalize='none'
             onChangeText={handleEmailChange}
-            onFocus={handleEmailFocus}
-            onBlur={handleEmailBlur}
           />
           {emailError ? <Text style={styles.errorMessage}>{emailError}</Text> : null}
+
+
+          <Text style={styles.text}>Password</Text>
           <TextInput
             secureTextEntry={true}
             value={password}
-            style={[inputStyles.input, isPasswordFocused ? inputStyles.inputFocused : inputStyles.inputFocused]}
+            style={[styles.input, passwordError ? styles.inputError : null]}
             placeholder='New Password'
             autoCapitalize='none'
             onChangeText={handlePasswordChange}
-            onFocus={handlePasswordFocus}
-            onBlur={handlePasswordBlur}
           />
           <TextInput
             secureTextEntry={true}
             value={confirmPassword}
-            style={[inputStyles.input, passwordError ? inputStyles.inputError : null, isConfirmPasswordFocused ? inputStyles.inputFocused : inputStyles.inputFocused]}
+            style={[styles.input, passwordError ? styles.inputError : null]}
             placeholder='Confirm New Password'
             autoCapitalize='none'
             onChangeText={handleConfirmPasswordChange}
-            onFocus={handleConfirmPasswordFocus}
-            onBlur={handleConfirmPasswordBlur}
           />
           {passwordError ? <Text style={styles.errorMessage}>{passwordError}</Text> : null}
 
           {loading ? (
             <ActivityIndicator size='large' color='#0000ff' />
           ) : (
-            <>
-              <View style={styles.signInContainer}>
-                <TouchableOpacity style={styles.button} onPress={signUp}>
-                  <Text style={styles.buttonText}>Register</Text>
-                </TouchableOpacity>
-              </View>
-              {isBackButtonVisible && (
-                <View style={styles.backButtonContainer}>
-                  <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
-                    <Text style={styles.backButtonText}>Back</Text>
-                  </TouchableOpacity>
-                </View>
-              )}
-            </>
+            <View style={styles.signInContainer}>
+              <TouchableOpacity style={styles.button} onPress={signUp}>
+                <Text style={styles.buttonText}>Register</Text>
+              </TouchableOpacity>
+            </View>
           )}
         </View>
       </ScrollView>
@@ -255,6 +271,14 @@ const styles = StyleSheet.create({
   scrollContainer: {
     flexGrow: 1,
     justifyContent: 'center',
+  }, 
+  dropdown: {
+    height: 50,
+    width: 250,
+    backgroundColor: '#fff',
+    borderRadius: 50,
+    paddingHorizontal: 20,
+    marginTop: 4
   },
   inner: {
     padding: 24,
@@ -266,7 +290,7 @@ const styles = StyleSheet.create({
     width: 150,
     height: 150,
     resizeMode: 'contain',
-    marginBottom: 40,
+    marginBottom: 20,
   },
   input: {
     marginVertical: 4,
@@ -277,17 +301,12 @@ const styles = StyleSheet.create({
     borderRadius: 30,
     alignSelf: 'center',
     padding: 10,
-    marginTop: 20,
+    marginTop: 10,
     backgroundColor: '#fff',
     borderColor: '#ccc',
   },
   inputError: {
     borderColor: 'red',
-  },
-  inputFocused: {
-    backgroundColor: '#fff',
-    borderRadius: 30,
-    overflow: 'hidden'
   },
   signInContainer: {
     flexDirection: 'row',
@@ -295,33 +314,12 @@ const styles = StyleSheet.create({
     marginTop: 32,
     width: '100%',
   },
-  backButtonContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-evenly',
-    position: 'absolute',
-    bottom: 40,
-    alignSelf: 'center',
-  },
   button: {
     backgroundColor: '#e66701',
     paddingVertical: 10,
     paddingHorizontal: 20,
     borderRadius: 30,
     width: '30%',
-  },
-  backButton: {
-    paddingVertical: 10,
-    paddingHorizontal: 20,
-    borderRadius: 30,
-    width: '100%',
-  },
-  buttonSignUp: {
-    paddingLeft: 12,
-  },
-  backButtonText: {
-    color: '#fff',
-    textAlign: 'center',
-    fontWeight: 'bold',
   },
   buttonText: {
     color: '#fff',
@@ -331,6 +329,8 @@ const styles = StyleSheet.create({
   text: {
     color: '#fff',
     textAlign: 'center',
+    fontWeight: 'bold',
+    marginTop: 22
   },
   errorMessage: {
     color: 'red',

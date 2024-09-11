@@ -1,13 +1,13 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { View, Text, StyleSheet, ActivityIndicator, TouchableOpacity, Pressable, ScrollView, KeyboardAvoidingView, Platform } from 'react-native';
-import { RouteProp, useRoute, useNavigation } from '@react-navigation/native';
-import { collection, getDocs, query, where, doc, deleteDoc } from 'firebase/firestore';
+import { collection, deleteDoc, doc, getDocs, query, where } from 'firebase/firestore';
 import { Menu, Provider } from 'react-native-paper';
-import { FIREBASE_DB } from '../../firebase';
-import { RootStackParamList } from '../../types';
-import { useAuth } from '../context/AuthContext';
+import { FIREBASE_DB } from '../../../firebase';
+import { RootStackParamList } from '../../../types';
+import { useAuth } from '../../context/AuthContext';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { StackNavigationProp } from '@react-navigation/stack';
+import { RouteProp, useRoute, useNavigation, useFocusEffect } from '@react-navigation/native';
 
 type ViewEvaluationsRouteProp = RouteProp<RootStackParamList, 'ViewEvaluations'>;
 type NavigationProp = StackNavigationProp<RootStackParamList, 'ViewEvaluations'>;
@@ -22,26 +22,46 @@ const ViewEvaluations: React.FC = () => {
   const [visible, setVisible] = useState<string | null>(null);
 
   const navigateToCreateEvaluation = () => {
-    navigation.navigate('QuestionnaireForm' as never); 
+    navigation.navigate('Form' as never); 
   };
 
-  useEffect(() => {
-    if (user) {
-      fetchUserEvaluations(user.uid);
+  useFocusEffect(
+    useCallback(() => {
+      if (user) {
+      fetchEvaluations();
     }
-  }, [user]);
+    }, [user])
+  );
 
-  const fetchUserEvaluations = async (userId: string) => {
+  const fetchEvaluations = async () => {
     try {
-      const q = query(collection(FIREBASE_DB, 'questionnaires'), where('userId', '==', userId));
+      let q;
+      if (user!.role === 'manager') {
+        // Fetch evaluations for all users in the same enterprise
+        q = query(
+          collection(FIREBASE_DB, 'questionnaires'),
+          where('enterpriseId', '==', user!.enterpriseId)
+        );
+      } else if (user!.role === 'user') {
+        // Fetch evaluations associated with the user
+        q = query(
+          collection(FIREBASE_DB, 'questionnaires'),
+          where('userId', '==', user!.uid)
+        );
+      } else {
+        q = query(
+          collection(FIREBASE_DB, 'questionnaires')
+        );
+      }
+
       const querySnapshot = await getDocs(q);
-      const userEvaluations = querySnapshot.docs.map(doc => ({
+      const fetchedEvaluations = querySnapshot.docs.map(doc => ({
         id: doc.id,
         ...doc.data()
       }));
-      setEvaluations(userEvaluations);
+      setEvaluations(fetchedEvaluations);
     } catch (error) {
-      console.error("Error fetching user evaluations: ", error);
+      console.error("Error fetching evaluations: ", error);
     } finally {
       setLoading(false);
     }
@@ -92,12 +112,16 @@ const ViewEvaluations: React.FC = () => {
                 <Text style={styles.projectMessage}>Evaluation submitted successfully: {projectName}</Text>
               )}
               <Text style={styles.title}>Evaluations</Text>
-              <TouchableOpacity onPress={() => navigateToCreateEvaluation()} style={styles.buttonAdd}>
-                <Text>
-                  <Text style={styles.buttonText}>Add new</Text>
-                  <Icon name="plus" size={16} color="gray"/>
-                </Text>
-              </TouchableOpacity>
+
+              {user?.role === 'manager' && (
+                <TouchableOpacity onPress={navigateToCreateEvaluation} style={styles.buttonAdd}>
+                  <Text>
+                    <Text style={styles.buttonText}>New</Text>
+                    <Icon name="plus" size={16} color="gray"/>
+                  </Text>
+                </TouchableOpacity>
+              )}
+
               {evaluations.length > 0 ? (
                 evaluations.map((evaluation) => (
                   <View key={evaluation.id} style={styles.evaluationContainer}>
@@ -111,9 +135,14 @@ const ViewEvaluations: React.FC = () => {
                           <Icon name="dots-vertical" size={24} color="#FFFFFF" />
                         </TouchableOpacity>
                       }>
+                      {/* Menu options based on user role */}
                       <Menu.Item onPress={() => handleView(evaluation.id)} title="View" />
                       <Menu.Item onPress={() => handleEdit(evaluation.id)} title="Edit" />
-                      <Menu.Item onPress={() => handleDelete(evaluation.id)} title="Delete" />
+                      {user!.role === 'manager' || user!.role === 'admin' && (
+                        <>
+                          <Menu.Item onPress={() => handleDelete(evaluation.id)} title="Delete" />
+                        </>
+                      )}
                     </Menu>
                   </View>
                 ))
@@ -164,7 +193,7 @@ const styles = StyleSheet.create({
     alignContent: 'center',
     textAlignVertical: 'center',
     paddingVertical: 4,
-    paddingHorizontal: 8,
+    paddingHorizontal: 4,
     borderRadius: 8
   },
   buttonText: {
@@ -182,7 +211,8 @@ const styles = StyleSheet.create({
   evaluationContainer: {
     width: '100%',
     backgroundColor: '#1e1e2d',
-    padding: 15,
+    paddingVertical: 8,
+    paddingHorizontal: 16,
     marginVertical: 10,
     borderRadius: 10,
     flexDirection: 'row',

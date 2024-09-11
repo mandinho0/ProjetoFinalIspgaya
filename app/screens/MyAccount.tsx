@@ -1,31 +1,35 @@
-import React, { useContext } from 'react';
+import React, { useContext, useEffect, useState } from 'react';
 import { View, Text, StyleSheet, Button, Alert, ActivityIndicator } from 'react-native';
-import { useNavigation } from '@react-navigation/native';
+import { NavigationProp, useNavigation } from '@react-navigation/native';
 import { useAuth } from '../context/AuthContext';
+import { RootStackParamList } from '../../navigationTypes';
+import { Enterprise } from '../../types';
+import { collection, getDocs, getFirestore } from 'firebase/firestore';
 
 export default function MyAccount() {
   const { user, signOut, loading } = useAuth();
-  const navigation = useNavigation();
-
-  console.log("User in MyAccount: ", user);
-
+  const navigation = useNavigation<NavigationProp<RootStackParamList>>();
+  const [enterprises, setEnterprises] = useState<Enterprise[]>([]);
+  const firestore = getFirestore();  
+  
   const handleEdit = () => {
-    navigation.navigate('EditProfile' as never);
+    navigation.navigate('EditUser', { userId: user!.uid }); 
   };
-
+  
   const handleLogout = () => {
     Alert.alert(
-      "SignOut",
-      "Are you sure you want to signout now?",
+      "Logout",
+      "Are you sure you want to logout now?",
       [
         {
           text: "Cancel",
           style: "cancel"
         },
         {
-          text: "SignOut",
+          text: "Logout",
           onPress: () => {
             signOut();
+            navigation.navigate('Login'); 
           },
           style: "destructive"
         }
@@ -33,6 +37,20 @@ export default function MyAccount() {
       { cancelable: false }
     );
   };
+
+  useEffect(() => {
+    const fetchEnterprises = async () => {
+      const enterprisesCollection = collection(firestore, 'enterprises');
+      const enterprisesSnapshot = await getDocs(enterprisesCollection);
+      const enterprisesList: Enterprise[] = enterprisesSnapshot.docs.map(doc => ({
+        id: doc.id,
+        nome: doc.data().nome,
+      }));
+      setEnterprises(enterprisesList);
+    };
+  
+    fetchEnterprises();
+  }, []);
 
   if (loading) {
     return (
@@ -56,19 +74,19 @@ export default function MyAccount() {
       
       <View style={styles.labelsContainer}>
         <View style={styles.labelContainer}>
-          <Text style={styles.label}>First Name:</Text>
-          <Text style={styles.text}>{user.firstName}</Text>
-        </View>
-        
-        <View style={styles.labelContainer}>
-          <Text style={styles.label}>Last Name:</Text>
-          <Text style={styles.text}>{user.lastName}</Text>
+          <Text style={styles.label}>Name:</Text>
+          <Text style={styles.text}>{user.firstName + ' ' + user.lastName}</Text>
         </View>
         
         <View style={styles.labelContainer}>
           <Text style={styles.label}>Email:</Text>
           <Text style={styles.text}>{user.email}</Text>
         </View>
+
+      <View style={styles.labelContainer}>
+        <Text style={styles.label}>Enterprise:</Text>
+        <Text style={styles.text}>{enterprises.find(e => e.id === user.enterpriseId)?.nome || 'No enterprise selected'}</Text>
+      </View>
 
         <View style={styles.labelContainer}>
           <Text style={styles.label}>Role:</Text>
@@ -77,8 +95,8 @@ export default function MyAccount() {
       </View>
       
       <View style={styles.actions}>
-        <Button title="Edit Information" onPress={handleEdit} />
-        <Button title="SignOut" onPress={handleLogout} color="red" />
+        <Button title="Edit Information" onPress={handleEdit}/>
+        <Button title="Logout" onPress={handleLogout} color="red"/>
       </View>
     </View>
   );
@@ -125,5 +143,6 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     marginBottom: 10,
     color: '#000115',
+    textTransform: 'capitalize'
   },
 });

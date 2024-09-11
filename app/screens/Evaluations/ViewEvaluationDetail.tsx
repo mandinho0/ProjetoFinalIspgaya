@@ -1,23 +1,16 @@
-import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator, Alert, Pressable, ScrollView, KeyboardAvoidingView, Platform } from 'react-native';
-import { RouteProp, useRoute, useNavigation } from '@react-navigation/native';
+import React, { useState, useEffect, useCallback } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator, Alert, Pressable, ScrollView, KeyboardAvoidingView, Platform, Button } from 'react-native';
+import { RouteProp, useRoute, useNavigation, useFocusEffect } from '@react-navigation/native';
 import { doc, getDoc, deleteDoc } from 'firebase/firestore';
-import { FIREBASE_DB } from '../../firebase';
-import { RootStackParamList } from '../../types';
-import { useAuth } from '../context/AuthContext';
+import { FIREBASE_DB } from '../../../firebase';
+import { RootStackParamList } from '../../../types';
+import { useAuth } from '../../context/AuthContext';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { StackNavigationProp } from '@react-navigation/stack';
 import * as FileSystem from 'expo-file-system';
 import * as Sharing from 'expo-sharing';
 import * as Print from 'expo-print';
 import * as XLSX from 'xlsx';
-
-const options = ['SA', 'MA', 'A', 'NAD', 'D', 'MD', 'SD'];
-const optionLabels = [
-  'Strongly Agree ', 'Moderately Agree', 'Agree',
-  'Neither Agree nor Disagree', 'Disagree',
-  'Moderately Disagree', 'Strongly Disagree'
-];
 
 type ViewEvaluationDetailRouteProp = RouteProp<RootStackParamList, 'ViewEvaluationDetail'>;
 type NavigationProp = StackNavigationProp<RootStackParamList, 'ViewEvaluationDetail'>;
@@ -30,11 +23,11 @@ const ViewEvaluationDetail: React.FC = () => {
   const [loading, setLoading] = useState<boolean>(true);
   const [evaluation, setEvaluation] = useState<any>(null);
 
-  useEffect(() => {
-    if (evaluationId && user) {
+  useFocusEffect(
+    useCallback(() => {
       fetchEvaluationDetails(evaluationId);
-    }
-  }, [evaluationId, user]);
+    }, [evaluationId, user])
+  );
 
   const fetchEvaluationDetails = async (evaluationId: string) => {
     setLoading(true);
@@ -84,23 +77,31 @@ const ViewEvaluationDetail: React.FC = () => {
   };
 
   const createPDF = async () => {
-    if (!evaluation) return;
+    if (!evaluation || !evaluation.responses) {
+      Alert.alert("Cannot generate PDF", "This evaluation is not yet completed.");
+      return;
+    }
 
+    const totalScore = calculateTotalScore();
     const htmlContent = `
       <html>
         <body>
           <h1>Evaluation Details</h1>
           <h2>Project Name: ${evaluation.projectName}</h2>
           <h3>Innovation Area: ${evaluation.innovationArea}</h3>
+          <h4>Total Score: ${totalScore}%</h4>
           <h4>Responses:</h4>
-          ${Object.keys(evaluation.responses).sort(numericSort).map(dimension => `
-            <div>
-              <h5>${dimension.replace(/%20/g, ' ')}</h5>
-              ${Object.keys(evaluation.responses[dimension]).map(subDimension => `
-                <p>${subDimension.replace(/%20/g, ' ').replace(/%2C/g, ', ').replace(/%2/g, ', ')}: ${evaluation.responses[dimension][subDimension]}</p>
-              `).join('')}
-            </div>
-          `).join('')}
+          ${Object.keys(evaluation.responses).sort(numericSort).map(dimension => {
+            const { percentageScore } = calculateDimensionScore(dimension);
+            return `
+              <div>
+                <h5>${dimension.replace(/%20/g, ' ')} - ${percentageScore.toFixed(2)}%</h5>
+                ${Object.keys(evaluation.responses[dimension]).map(subDimension => `
+                  <p>${subDimension.replace(/%20/g, ' ').replace(/%2C/g, ', ').replace(/%2/g, ', ')}: ${evaluation.responses[dimension][subDimension]}</p>
+                `).join('')}
+              </div>
+            `;
+          }).join('')}
         </body>
       </html>
     `;
@@ -110,17 +111,23 @@ const ViewEvaluationDetail: React.FC = () => {
   };
 
   const createExcel = async () => {
-    if (!evaluation) return;
+    if (!evaluation || !evaluation.responses) {
+      Alert.alert("Cannot generate Excel", "This evaluation is not yet completed.");
+      return;
+    }
 
+    const totalScore = calculateTotalScore();
     const wb = XLSX.utils.book_new();
     const wsData = [
-      ["Dimension", "Sub Dimension", "Response"]
+      ["Dimension", "Sub Dimension", "Response"],
+      ["Total Score", "", `${totalScore}%`]
     ];
 
     Object.keys(evaluation.responses).sort(numericSort).forEach(dimension => {
+      const { percentageScore } = calculateDimensionScore(dimension);
       Object.keys(evaluation.responses[dimension]).forEach(subDimension => {
         wsData.push([
-          dimension.replace(/%20/g, ' '),
+          `${dimension.replace(/%20/g, ' ')} - ${percentageScore.toFixed(2)}%`,
           subDimension.replace(/%20/g, ' ').replace(/%2C/g, ', '),
           evaluation.responses[dimension][subDimension]
         ]);
@@ -140,6 +147,32 @@ const ViewEvaluationDetail: React.FC = () => {
       dialogTitle: 'Evaluation Data',
       UTI: 'com.microsoft.excel.xlsx'
     });
+  };
+
+  const calculateTotalScore = () => {
+    if (!evaluation || !evaluation.responses) return 'N/A';
+    
+    const dimensions = Object.keys(evaluation.responses);
+    const totalScore = dimensions.reduce((acc, dimension) => {
+      const { percentageScore } = calculateDimensionScore(dimension);
+      return acc + percentageScore;
+    }, 0);
+    return (totalScore / dimensions.length).toFixed(2);
+  };
+
+  const calculateDimensionScore = (dimension: string) => {
+    const subDimensions = Object.keys(evaluation.responses[dimension]);
+    const totalResponses = subDimensions.length;
+    
+    const totalDimensionScore = subDimensions.reduce((acc, subDimension) => {
+      const response = evaluation.responses[dimension][subDimension];
+      return acc + response; // Assuming response is numeric
+    }, 0);
+  
+    const maxScore = totalResponses * 7;
+    const percentageScore = (totalDimensionScore / maxScore) * 100;
+    
+    return { totalDimensionScore, percentageScore };
   };
 
   const numericSort = (a: string, b: string) => {
@@ -164,6 +197,17 @@ const ViewEvaluationDetail: React.FC = () => {
     );
   }
 
+  if (!evaluation.responses) {
+    return (
+      <View style={styles.containerNotCompleted}>
+        <Text style={styles.errorText}>This evaluation has not been completed yet.</Text>
+        <View style={styles.actions}>
+          <Button title="Back" onPress={() => navigation.goBack()} color="white" />
+        </View>
+      </View>
+    );
+  }
+
   return (
     <KeyboardAvoidingView
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
@@ -179,10 +223,10 @@ const ViewEvaluationDetail: React.FC = () => {
             <Text style={styles.titleName}>{evaluation.projectName}</Text>
             <View style={styles.headerActions}>
               <TouchableOpacity style={styles.iconButton} onPress={handleEdit}>
-                <Icon name="pencil" size={24} color="#333300" />
+                <Icon name="pencil" size={24} color="black" />
               </TouchableOpacity>
               <TouchableOpacity style={styles.iconButton} onPress={handleDelete}>
-                <Icon name="delete" size={24} color="#333300" />
+                <Icon name="delete" size={24} color="orange" />
               </TouchableOpacity>
             </View>
           </View>
@@ -190,34 +234,43 @@ const ViewEvaluationDetail: React.FC = () => {
           <View style={styles.innovationArea}>
             <Text style={styles.subtitle}>
               <Text style={styles.innovationAreaLabel}>
-                Innovation Area - 
+                Innovation Area: 
               </Text>
-              <Text>
-               {' ' + evaluation.innovationArea}
+              <Text style={styles.result}>
+               {'  ' + evaluation.innovationArea}
+              </Text>
+            </Text>
+            <Text style={styles.subtitle}>
+              <Text style={styles.pontuationAreaLabel}>
+                General Score: 
+              </Text>
+              <Text style={styles.result}>
+               {'  ' + calculateTotalScore() + '%'}
               </Text>
             </Text>
           </View>
 
-          <View style={styles.labelContainer}>
-            <Text style={styles.optionsLabel}>Options Info:</Text>
-            {optionLabels.map((label, index) => (
-            <Text key={index} style={styles.labelText}>
-              <Text style={{ fontWeight: 'bold' }}>{options[index] + ': '}</Text>
-              {label}
-            </Text>
-            ))}
-          </View>
-
-          {Object.keys(evaluation.responses).sort(numericSort).map(dimension => (
-            <View key={dimension} style={styles.dimension}>
-              <Text style={styles.dimensionTitle}>{dimension.replace(/%20/g, ' ')}</Text>
-              {Object.keys(evaluation.responses[dimension]).map(subDimension => (
-                <Text key={subDimension} style={styles.response}>
-                  {subDimension.replace(/%20/g, ' ').replace(/%2C/g, ', ').replace(/%2/g, ', ')}: {evaluation.responses[dimension][subDimension]}
+          {Object.keys(evaluation.responses).sort(numericSort).map(dimension => {
+            const { percentageScore } = calculateDimensionScore(dimension);
+            return (
+              <View key={dimension} style={styles.dimension}>
+                <Text style={styles.dimensionTitle}>
+                  {dimension.replace(/%20/g, ' ')} - {percentageScore.toFixed(2)}%
                 </Text>
-              ))}
-            </View>
-          ))}
+                {Object.keys(evaluation.responses[dimension]).map(subDimension => (
+                  <View key={subDimension} style={styles.responseContainer}>
+                    <Text style={styles.response}>
+                      {subDimension.replace(/%20/g, ' ').replace(/%2C/g, ', ')}
+                    </Text>
+                    <Text style={styles.responseValue}>
+                      {evaluation.responses[dimension][subDimension]}
+                    </Text>
+                  </View>
+                ))}
+              </View>
+            );
+          })}
+
           <View style={styles.downloadButtons}>
             <TouchableOpacity style={styles.button} onPress={createPDF}>
               <Text style={styles.buttonContainer}>
@@ -244,20 +297,29 @@ const styles = StyleSheet.create({
     backgroundColor: '#000115',
     paddingVertical: 60,
   },
+  containerNotCompleted: {
+    flex: 1,
+    backgroundColor: '#000115',
+    paddingVertical: 60,
+    justifyContent: 'center', // Centraliza no eixo vertical
+  alignItems: 'center',
+  },
   innovationArea: {
     borderColor: 'orange',
     borderWidth: 1,
-    marginBottom: 28,
+    width: 'auto',
+    marginBottom: 24,
     borderRadius: 32,
     justifyContent: 'center',
     alignItems: 'center',
     verticalAlign: 'middle',
-    paddingTop: 16
+    paddingTop: 16,
   },
   innovationAreaLabel: {
     fontWeight: '500',
     marginRight: 32,
-    justifyContent: 'space-evenly'
+    justifyContent: 'space-evenly',
+    textAlign:'center'
   },
   scrollContainer: {
     flexGrow: 1,
@@ -274,11 +336,13 @@ const styles = StyleSheet.create({
   errorText: {
     color: 'red',
     textAlign: 'center',
+    fontSize: 20,
+    paddingHorizontal: 40
   },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginBottom: 40,
+    marginBottom: 10,
     backgroundColor: 'gray',
     borderRadius: 32,
     paddingHorizontal: 12
@@ -307,7 +371,7 @@ const styles = StyleSheet.create({
     fontWeight: '500'
   },
   optionsLabel: {
-    color: 'black',
+    color: 'orange',
     fontSize: 16,
     marginBottom: 10,
     borderRadius: 16,
@@ -315,15 +379,20 @@ const styles = StyleSheet.create({
     textAlign: 'center'
   },
   titleName: {
-    color: 'orange',
-    fontSize: 20,
+    color: 'white',
+    fontSize: 18,
     padding: 12,
     fontWeight: '500'
   },
   subtitle: {
     color: '#FFFFFF',
-    fontSize: 18,
+    fontSize: 14,
     marginBottom: 20,
+    textAlign: 'center'
+  },
+  pontuationAreaLabel: {
+    color: '#FFFFFF',
+    fontSize: 14,
   },
   sectionTitle: {
     color: '#FFFFFF',
@@ -339,11 +408,25 @@ const styles = StyleSheet.create({
     marginBottom: 5,
     textAlign: 'center'
   },
+  responseContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 5,
+    paddingHorizontal: 10,
+  },
   response: {
     color: '#FFFFFF',
     fontSize: 16,
-    marginLeft: 10,
-    marginBottom: 5
+  },
+  result: {
+    color: '#FFFFFF',
+    fontSize: 22,
+  },
+  responseValue: {
+    color: '#FFFFFF',
+    fontSize: 16,
+    textAlign: 'right',
+    minWidth: 50,
   },
   downloadButtons: {
     marginTop: 20,
@@ -355,6 +438,16 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     display: 'flex',
     flexDirection: 'column'
+  },
+  actions: {
+    verticalAlign: 'middle',
+    justifyContent: 'space-between',
+    display: 'flex',
+    flexDirection: 'column',
+    marginTop: 30,
+    backgroundColor:'orange',
+    paddingHorizontal: 16,
+    borderRadius: 30
   },
   button: {
     backgroundColor: 'orange',

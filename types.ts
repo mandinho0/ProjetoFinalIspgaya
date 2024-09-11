@@ -11,13 +11,19 @@ export interface RadioChangeHandler {
   (dimension: string, subDimension: string, value: string): void;
 }
 
+export interface Enterprise {
+  id: string;
+  nome: string;
+}
+
 export type RootStackParamList = {
   Login: undefined;
   SignUp: undefined;
   Homepage: undefined;
-  QuestionnaireForm: undefined;
+  Form: undefined;
   SummaryScreen: undefined;
   ViewEvaluations: { projectName: string };
   ViewEvaluationDetail: { evaluationId: string };
   EditEvaluation: { evaluationId: string };
+  AdminDashboard: undefined;
 };

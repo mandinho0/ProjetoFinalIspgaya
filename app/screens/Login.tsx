@@ -1,4 +1,3 @@
-// Login.js
 import React, { useState, useCallback } from 'react';
 import { View, TextInput, TouchableOpacity, Text, ActivityIndicator, StyleSheet, Image, ScrollView, KeyboardAvoidingView, Platform, RefreshControl, Pressable } from 'react-native';
 import { signInWithEmailAndPassword } from 'firebase/auth';
@@ -8,13 +7,37 @@ import { useAuth } from '../context/AuthContext';
 import { doc, getDoc } from 'firebase/firestore';
 import logo from '../assets/logoInova.jpg';
 
+interface ExtendedUser {
+  uid: string;
+  firstName?: string;
+  lastName?: string;
+  role?: string;
+  emailVerified: boolean;
+  isAnonymous: boolean;
+  metadata: any;
+  providerData: any[];
+  refreshToken: string;
+  tenantId: string | null;
+  delete: () => Promise<void>;
+  getIdToken: (forceRefresh?: boolean) => Promise<string>;
+  getIdTokenResult: (forceRefresh?: boolean) => Promise<any>;
+  reload: () => Promise<void>;
+  toJSON: () => object;
+  displayName: string | null;
+  email: string | null;
+  phoneNumber: string | null;
+  photoURL: string | null;
+  providerId: string;
+  enterpriseId: string;
+}
+
 const Login = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const { setUser } = useAuth();
-  const navigation = useNavigation(); 
+  const navigation = useNavigation();
 
   const navigateToSignUp = () => {
     navigation.navigate('SignUp' as never);
@@ -28,16 +51,49 @@ const Login = () => {
       const userDocRef = doc(FIREBASE_DB, 'users', firebaseUser.uid);
       const userDoc = await getDoc(userDocRef);
 
-      let extendedUser = firebaseUser;
+      let extendedUser: ExtendedUser = {
+        ...firebaseUser,
+        enterpriseId: '',
+        firstName: '',
+        lastName: '',
+        role: '',
+        emailVerified: firebaseUser.emailVerified,
+        isAnonymous: firebaseUser.isAnonymous,
+        metadata: firebaseUser.metadata,
+        providerData: firebaseUser.providerData,
+        refreshToken: firebaseUser.refreshToken,
+        tenantId: firebaseUser.tenantId,
+        delete: firebaseUser.delete,
+        getIdToken: firebaseUser.getIdToken,
+        getIdTokenResult: firebaseUser.getIdTokenResult,
+        reload: firebaseUser.reload,
+        toJSON: firebaseUser.toJSON,
+        displayName: firebaseUser.displayName,
+        email: firebaseUser.email,
+        phoneNumber: firebaseUser.phoneNumber,
+        photoURL: firebaseUser.photoURL,
+        providerId: firebaseUser.providerId,
+      };
 
       if (userDoc.exists()) {
         const userData = userDoc.data();
-        extendedUser = { ...firebaseUser, ...userData };
-        console.log("Merged User Data on Login: ", extendedUser);
-      }
+        extendedUser = { 
+          ...extendedUser, 
+          enterpriseId: userData.enterpriseId || '', 
+          firstName: userData.firstName || '',
+          lastName: userData.lastName || '',
+          role: userData.role || ''
+        };
+        setUser(extendedUser); // Atualiza o usuário no contexto
 
-      setUser(extendedUser);
-      navigation.navigate('ViewEvaluations' as never);
+        if (userData.role === 'admin') {
+          navigation.navigate('AdminDashboard' as never);
+        } else {
+          navigation.navigate('ViewEvaluations' as never);
+        }
+      } else {
+        alert('No additional user data found');
+      }
     } catch (error) {
       console.log(error);
       alert('Error signing in');
