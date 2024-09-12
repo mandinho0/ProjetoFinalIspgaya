@@ -17,6 +17,7 @@ import { FIREBASE_AUTH } from '../../firebase';
 import { useNavigation } from '@react-navigation/native';
 import logo from '../assets/logoInova.jpg';
 import { Dropdown } from 'react-native-element-dropdown'; // Importar o Dropdown
+import Icon from 'react-native-vector-icons/MaterialIcons'; // Importar o ícone
 import { Enterprise } from '../../types';
 
 const SignUp = () => {
@@ -27,11 +28,9 @@ const SignUp = () => {
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [passwordError, setPasswordError] = useState('');
-  const [enterpriseError, setEnterpriseError] = useState(''); // Novo estado para erro de seleção de empresa
+  const [enterpriseError, setEnterpriseError] = useState('');
   const [loading, setLoading] = useState(false);
-  const [isEmailFocused, setIsEmailFocused] = useState(false);
-  const [isPasswordFocused, setIsPasswordFocused] = useState(false);
-  const [isConfirmPasswordFocused, setIsConfirmPasswordFocused] = useState(false);
+  const [showPassword, setShowPassword] = useState(false); // Estado para alternar a visibilidade das senhas
   const [enterprises, setEnterprises] = useState<Enterprise[]>([]);
   const [selectedEnterprise, setSelectedEnterprise] = useState<string>('');
   const auth = FIREBASE_AUTH;
@@ -46,50 +45,41 @@ const SignUp = () => {
     let isValid = true;
 
     if (!firstName.trim()) {
-      isValid = false;
       alert('First name is required');
-      return;
+      return false;
     }
 
     if (!lastName.trim()) {
-      isValid = false;
       alert('Last name is required');
-      return;
+      return false;
     }
 
     if (!email.trim()) {
       setEmailError('Email is required');
-      isValid = false;
-      return;
+      return false;
     } else if (!validateEmail(email)) {
       setEmailError('Invalid email format');
-      isValid = false;
-      return;
+      return false;
     }
 
     if (!password.trim()) {
       setPasswordError('Password is required');
-      isValid = false;
-      return;
+      return false;
     } else if (password !== confirmPassword) {
       setPasswordError('Passwords do not match');
-      isValid = false;
-      return;
+      return false;
     }
 
     if (!selectedEnterprise) {
       setEnterpriseError('Please select an enterprise');
-      isValid = false;
-      return;
+      return false;
     }
 
-    return isValid;
+    return true;
   };
 
   const signUp = async () => {
-    if (!validateFields()) {
-      return;
-    }
+    if (!validateFields()) return;
 
     setLoading(true);
     try {
@@ -104,16 +94,15 @@ const SignUp = () => {
       const user = userCredential.user;
       
       await setDoc(doc(firestore, 'users', user.uid), {
-        firstName: firstName,
-        lastName: lastName,
-        email: email,
+        firstName,
+        lastName,
+        email,
         userId: user.uid,
-        enterpriseId: selectedEnterprise, 
+        enterpriseId: selectedEnterprise,
         role: 'user'
       });
 
       navigateToHomePage();
-
       alert('Account created successfully!');
     } catch (error: any) {
       if (error.code === 'auth/email-already-in-use') {
@@ -156,6 +145,10 @@ const SignUp = () => {
     } else {
       setEmailError('Invalid email format');
     }
+  };
+
+  const togglePasswordVisibility = () => {
+    setShowPassword(!showPassword);
   };
 
   useEffect(() => {
@@ -225,24 +218,33 @@ const SignUp = () => {
           />
           {emailError ? <Text style={styles.errorMessage}>{emailError}</Text> : null}
 
-
           <Text style={styles.text}>Password</Text>
-          <TextInput
-            secureTextEntry={true}
-            value={password}
-            style={[styles.input, passwordError ? styles.inputError : null]}
-            placeholder='New Password'
-            autoCapitalize='none'
-            onChangeText={handlePasswordChange}
-          />
-          <TextInput
-            secureTextEntry={true}
-            value={confirmPassword}
-            style={[styles.input, passwordError ? styles.inputError : null]}
-            placeholder='Confirm New Password'
-            autoCapitalize='none'
-            onChangeText={handleConfirmPasswordChange}
-          />
+          <View style={styles.passwordContainer}>
+            <TextInput
+              secureTextEntry={!showPassword}
+              value={password}
+              style={[styles.input, passwordError ? styles.inputError : null]}
+              placeholder='New Password'
+              autoCapitalize='none'
+              onChangeText={handlePasswordChange}
+            />
+            <TouchableOpacity onPress={togglePasswordVisibility} style={styles.iconContainer}>
+              <Icon name={showPassword ? 'visibility' : 'visibility-off'} size={24} color="#000" />
+            </TouchableOpacity>
+          </View>
+          <View style={styles.passwordContainer}>
+            <TextInput
+              secureTextEntry={!showPassword}
+              value={confirmPassword}
+              style={[styles.input, passwordError ? styles.inputError : null]}
+              placeholder='Confirm New Password'
+              autoCapitalize='none'
+              onChangeText={handleConfirmPasswordChange}
+            />
+            <TouchableOpacity onPress={togglePasswordVisibility} style={styles.iconContainer}>
+              <Icon name={showPassword ? 'visibility' : 'visibility-off'} size={24} color="#000" />
+            </TouchableOpacity>
+          </View>
           {passwordError ? <Text style={styles.errorMessage}>{passwordError}</Text> : null}
 
           {loading ? (
@@ -277,7 +279,7 @@ const styles = StyleSheet.create({
     width: 250,
     backgroundColor: '#fff',
     borderRadius: 50,
-    paddingHorizontal: 20,
+    paddingHorizontal: 40,
     marginTop: 4
   },
   inner: {
@@ -304,15 +306,25 @@ const styles = StyleSheet.create({
     marginTop: 10,
     backgroundColor: '#fff',
     borderColor: '#ccc',
+    paddingHorizontal: 60 
   },
   inputError: {
     borderColor: 'red',
   },
-  signInContainer: {
+  passwordContainer: {
     flexDirection: 'row',
-    justifyContent: 'space-evenly',
+    alignItems: 'center',
+  },
+  iconContainer: {
+    position: 'absolute',
+    right: 15,
+    top: 13,
+    padding: 10,
+  },
+  signInContainer: {
     marginTop: 32,
     width: '100%',
+    alignItems: 'center',
   },
   button: {
     backgroundColor: '#e66701',

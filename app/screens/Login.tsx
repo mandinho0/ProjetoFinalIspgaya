@@ -5,6 +5,7 @@ import { FIREBASE_AUTH, FIREBASE_DB } from '../../firebase';
 import { useNavigation } from '@react-navigation/native';
 import { useAuth } from '../context/AuthContext';
 import { doc, getDoc } from 'firebase/firestore';
+import Icon from 'react-native-vector-icons/MaterialIcons'; // Importa o ícone
 import logo from '../assets/logoInova.jpg';
 
 interface ExtendedUser {
@@ -34,6 +35,7 @@ interface ExtendedUser {
 const Login = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false); // Novo estado para alternar a senha visível
   const [loading, setLoading] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const { setUser } = useAuth();
@@ -41,6 +43,10 @@ const Login = () => {
 
   const navigateToSignUp = () => {
     navigation.navigate('SignUp' as never);
+  };
+
+  const togglePasswordVisibility = () => {
+    setShowPassword(!showPassword); // Alterna a visibilidade da senha
   };
 
   const signIn = async () => {
@@ -84,7 +90,7 @@ const Login = () => {
           lastName: userData.lastName || '',
           role: userData.role || ''
         };
-        setUser(extendedUser); // Atualiza o usuário no contexto
+        setUser(extendedUser);
 
         if (userData.role === 'admin') {
           navigation.navigate('AdminDashboard' as never);
@@ -131,14 +137,19 @@ const Login = () => {
               autoCapitalize='none'
               onChangeText={(text) => setEmail(text)}
             />
-            <TextInput
-              secureTextEntry={true}
-              value={password}
-              style={styles.input}
-              placeholder='Password'
-              autoCapitalize='none'
-              onChangeText={(text) => setPassword(text)}
-            />
+            <View style={styles.passwordContainer}>
+              <TextInput
+                secureTextEntry={!showPassword} // Alterna a visibilidade da senha
+                value={password}
+                style={styles.inputPassword}
+                placeholder='Password'
+                autoCapitalize='none'
+                onChangeText={(text) => setPassword(text)}
+              />
+              <TouchableOpacity onPress={togglePasswordVisibility} style={styles.iconContainer}>
+                <Icon name={showPassword ? 'visibility' : 'visibility-off'} size={24} color="#000" />
+              </TouchableOpacity>
+            </View>
 
             {loading ? (
               <ActivityIndicator size='large' color='#0000ff' />
@@ -198,6 +209,29 @@ const styles = StyleSheet.create({
     marginTop: 20,
     backgroundColor: '#fff',
   },
+  passwordContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginVertical: 4,
+    width: 300
+  },
+  inputPassword: {
+    flex: 1,
+    height: 50,
+    width: 100,
+    textAlign: 'center',
+    borderWidth: 1,
+    borderRadius: 100,
+    padding: 10,
+    marginTop: 20,
+    backgroundColor: '#fff',
+  },
+  iconContainer: {
+    position: 'absolute',
+    right: 15,
+    top: 23,
+    padding: 10,
+  },
   signInContainer: {
     flexDirection: 'row',
     justifyContent: 'space-evenly',
@@ -216,7 +250,7 @@ const styles = StyleSheet.create({
     width: 100,
   },
   buttonSignUp: {
-    paddingLeft: 12
+    paddingLeft: 12,
   },
   textWithUnderline: {
     alignItems: 'center',
