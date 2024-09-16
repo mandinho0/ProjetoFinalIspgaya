@@ -7,7 +7,7 @@ const SummaryScreen: React.FC = () => {
   const navigation = useNavigation();
 
   const navigateToViewEvaluations = () => {
-    navigation.navigate('ViewEvaluations' as never); // Defina este nome com base no seu roteamento
+    navigation.navigate('ViewEvaluations' as never);
   };
 
   return (

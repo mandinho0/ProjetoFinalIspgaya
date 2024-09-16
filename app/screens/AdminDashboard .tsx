@@ -7,15 +7,15 @@ const AdminDashboard: React.FC = () => {
   const navigation = useNavigation();
 
   const navigateToEnterprises = () => {
-    navigation.navigate('ViewEnterprises' as never); // Página para visualizar e gerenciar Enterprises
+    navigation.navigate('ViewEnterprises' as never);
   };
 
   const navigateToEvaluations = () => {
-    navigation.navigate('ViewEvaluations' as never); // Página para visualizar e gerenciar Evaluations
+    navigation.navigate('ViewEvaluations' as never);
   };
 
   const navigateToUsers = () => {
-    navigation.navigate('ViewUsers' as never); // Página para visualizar e gerenciar Users
+    navigation.navigate('ViewUsers' as never);
   };
 
   return (

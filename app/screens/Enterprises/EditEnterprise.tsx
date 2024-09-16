@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { View, TextInput, TouchableOpacity, Text, StyleSheet, Alert } from 'react-native';
 import { getFirestore, doc, getDoc, updateDoc, collection, query, where, getDocs } from 'firebase/firestore'; 
 import { useNavigation, useRoute } from '@react-navigation/native';
-import Ionicons from 'react-native-vector-icons/Ionicons'; // Importa o ícone Ionicons
+import Ionicons from 'react-native-vector-icons/Ionicons';
 
 interface RouteParams {
   enterpriseId: string;
@@ -47,7 +47,6 @@ const EditEnterprise = () => {
     setLoading(true);
 
     try {
-      // Verificar se o nome da empresa já existe, exceto a própria empresa sendo editada
       const enterpriseQuery = query(
         collection(firestore, 'enterprises'),
         where('nome', '==', enterpriseName.trim())
@@ -57,7 +56,6 @@ const EditEnterprise = () => {
       if (!querySnapshot.empty) {
         const existingEnterprise = querySnapshot.docs[0];
         
-        // Verifica se a empresa encontrada é diferente da empresa sendo editada
         if (existingEnterprise.id !== enterpriseId) {
           Alert.alert('Error', 'An enterprise with this name already exists.');
           setLoading(false);
@@ -65,13 +63,12 @@ const EditEnterprise = () => {
         }
       }
 
-      // Atualiza o nome da empresa no Firestore
       await updateDoc(doc(firestore, 'enterprises', enterpriseId), {
         nome: enterpriseName.trim(),
       });
 
       Alert.alert('Success', 'Enterprise updated successfully!');
-      navigation.goBack(); // Navega de volta para a página anterior
+      navigation.goBack();
     } catch (error) {
       console.error('Error updating enterprise: ', error);
       Alert.alert('Error', 'An error occurred while updating the enterprise.');
@@ -82,14 +79,12 @@ const EditEnterprise = () => {
 
   return (
     <View style={styles.container}>
-      {/* Cabeçalho personalizado */}
       <View style={styles.header}>
         <TouchableOpacity onPress={() => navigation.goBack()}>
           <Ionicons name="arrow-back" style={styles.arrowBack} size={40} />
         </TouchableOpacity>
       </View>
 
-      {/* Conteúdo da página */}
       <View style={styles.content}>
         <Text style={styles.headerTitle}>Edit Enterprise</Text>
         <Text style={styles.label}>Enterprise Name</Text>
@@ -115,11 +110,10 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#000115',
   },
-  // Estilos para o cabeçalho
   header: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingTop: 40, // Adiciona espaçamento para a status bar
+    paddingTop: 40,
     paddingHorizontal: 20,
     paddingBottom: 10,
     backgroundColor: '#000115',
@@ -134,7 +128,6 @@ const styles = StyleSheet.create({
   arrowBack: {
     color: '#fff',
   },
-  // Estilos para o conteúdo
   content: {
     flex: 1,
     justifyContent: 'center',

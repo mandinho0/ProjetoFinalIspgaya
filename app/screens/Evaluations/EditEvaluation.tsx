@@ -29,11 +29,11 @@ const EditEvaluation: React.FC = () => {
   const [projectName, setProjectName] = useState<string>('');
   const [innovationArea, setInnovationArea] = useState<string>('');
   const [responses, setResponses] = useState<any>({});
+  const [comments, setComments] = useState<any>({}); 
   const [users, setUsers] = useState<User[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
 
-  // Effect to load users with role 'user'
   useEffect(() => {
     const fetchUsers = async () => {
       setLoading(true);
@@ -82,6 +82,7 @@ const EditEvaluation: React.FC = () => {
         } else {
           setResponses(data.responses);          
         }
+        setComments(data.comments || {});
       } else {
         Alert.alert("Evaluation not found");
         navigation.goBack();
@@ -103,7 +104,7 @@ const EditEvaluation: React.FC = () => {
         const dimensionId = dimensionDoc.id;
 
         if (!dimensionData.subDimensions || dimensionData.subDimensions.length === 0) {
-          console.log(`No subDimensions found for dimension: ${dimensionId}`); // Log para debug
+          console.log(`No subDimensions found for dimension: ${dimensionId}`);
           continue;
         }
 
@@ -136,7 +137,7 @@ const EditEvaluation: React.FC = () => {
       await updateDoc(docRef, {
         projectName,
         innovationArea,
-        ...(user?.role === 'manager' ? { userId: selectedUserId } : { responses }),
+        ...(user?.role === 'manager' ? { userId: selectedUserId } : { responses, comments }),
       });
       Alert.alert("Success", "Evaluation updated successfully.");
       navigation.navigate('ViewEvaluations' as never);
@@ -154,6 +155,12 @@ const EditEvaluation: React.FC = () => {
     return numA - numB;
   };
   
+  const handleCommentChange = (dimension: string, comment: string) => {
+    setComments((prevState: { [x: string]: any; }) => ({
+      ...prevState,
+      [dimension]: comment,
+    }));
+  };
 
   const handleScaleChange = (dimension: string, subDimension: string, value: number) => {
     setResponses((prevState: { [x: string]: any; }) => ({
@@ -234,6 +241,16 @@ const EditEvaluation: React.FC = () => {
                 </Text>
               </View>
             ))}
+          <Text style={styles.commentLabel}>Comment:</Text>
+          <TextInput
+            style={styles.commentInput}
+            placeholder="Write a comment to this dimension..."
+            placeholderTextColor="#999"
+            value={comments[dimension] || ''}
+            onChangeText={(text) => handleCommentChange(dimension, text)}
+            multiline={true}
+            numberOfLines={4}
+          />
         </View>
       ))}
     </>
@@ -386,6 +403,23 @@ const styles = StyleSheet.create({
     color: 'white',
     fontSize: 20,
     marginBottom: 10,
+  },
+  commentLabel: {
+    color: 'orange',
+    fontSize: 16,
+    marginTop: 10,
+  },
+  commentInput: {
+    width: '100%',
+    height: 100,
+    padding: 10,
+    textAlignVertical: 'top',
+    borderWidth: 1,
+    borderColor: '#999',
+    borderRadius: 10,
+    marginBottom: 20,
+    color: '#FFFFFF',
+    backgroundColor: '#333',
   },
 });
 

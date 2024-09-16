@@ -5,7 +5,7 @@ import { FIREBASE_AUTH, FIREBASE_DB } from '../../firebase';
 import { useNavigation } from '@react-navigation/native';
 import { useAuth } from '../context/AuthContext';
 import { doc, getDoc } from 'firebase/firestore';
-import Icon from 'react-native-vector-icons/MaterialIcons'; // Importa o ícone
+import Icon from 'react-native-vector-icons/MaterialIcons';
 import logo from '../assets/logoInova.jpg';
 
 interface ExtendedUser {
@@ -35,7 +35,7 @@ interface ExtendedUser {
 const Login = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [showPassword, setShowPassword] = useState(false); // Novo estado para alternar a senha visível
+  const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const { setUser } = useAuth();
@@ -46,7 +46,7 @@ const Login = () => {
   };
 
   const togglePasswordVisibility = () => {
-    setShowPassword(!showPassword); // Alterna a visibilidade da senha
+    setShowPassword(!showPassword);
   };
 
   const signIn = async () => {
@@ -139,7 +139,7 @@ const Login = () => {
             />
             <View style={styles.passwordContainer}>
               <TextInput
-                secureTextEntry={!showPassword} // Alterna a visibilidade da senha
+                secureTextEntry={!showPassword}
                 value={password}
                 style={styles.inputPassword}
                 placeholder='Password'

@@ -37,13 +37,11 @@ const ViewEvaluations: React.FC = () => {
     try {
       let q;
       if (user!.role === 'manager') {
-        // Fetch evaluations for all users in the same enterprise
         q = query(
           collection(FIREBASE_DB, 'questionnaires'),
           where('enterpriseId', '==', user!.enterpriseId)
         );
       } else if (user!.role === 'user') {
-        // Fetch evaluations associated with the user
         q = query(
           collection(FIREBASE_DB, 'questionnaires'),
           where('userId', '==', user!.uid)
@@ -135,7 +133,6 @@ const ViewEvaluations: React.FC = () => {
                           <Icon name="dots-vertical" size={24} color="#FFFFFF" />
                         </TouchableOpacity>
                       }>
-                      {/* Menu options based on user role */}
                       <Menu.Item onPress={() => handleView(evaluation.id)} title="View" />
                       <Menu.Item onPress={() => handleEdit(evaluation.id)} title="Edit" />
                       {user!.role === 'manager' || user!.role === 'admin' && (

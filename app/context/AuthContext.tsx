@@ -90,8 +90,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const signOut = () => {
     firebaseSignOut(FIREBASE_AUTH)
       .then(() => {
-        setUser(null); // Atualize o estado do usuário para null
-        navigation.navigate('Login' as never); // Navegue para a página de login
+        setUser(null);
+        navigation.navigate('Login' as never);
       })
       .catch((error) => console.error(error));
   };

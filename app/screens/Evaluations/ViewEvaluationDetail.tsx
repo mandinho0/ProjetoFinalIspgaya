@@ -99,6 +99,7 @@ const ViewEvaluationDetail: React.FC = () => {
                 ${Object.keys(evaluation.responses[dimension]).map(subDimension => `
                   <p>${subDimension.replace(/%20/g, ' ').replace(/%2C/g, ', ').replace(/%2/g, ', ')}: ${evaluation.responses[dimension][subDimension]}</p>
                 `).join('')}
+                ${evaluation.comments && evaluation.comments[dimension] ? `<p><strong>Comment:</strong> ${evaluation.comments[dimension]}</p>` : ''}
               </div>
             `;
           }).join('')}
@@ -119,7 +120,7 @@ const ViewEvaluationDetail: React.FC = () => {
     const totalScore = calculateTotalScore();
     const wb = XLSX.utils.book_new();
     const wsData = [
-      ["Dimension", "Sub Dimension", "Response"],
+      ["Dimension", "Sub Dimension", "Response", "Comment"],
       ["Total Score", "", `${totalScore}%`]
     ];
 
@@ -129,7 +130,8 @@ const ViewEvaluationDetail: React.FC = () => {
         wsData.push([
           `${dimension.replace(/%20/g, ' ')} - ${percentageScore.toFixed(2)}%`,
           subDimension.replace(/%20/g, ' ').replace(/%2C/g, ', '),
-          evaluation.responses[dimension][subDimension]
+          evaluation.responses[dimension][subDimension],
+          evaluation.comments && evaluation.comments[dimension] ? evaluation.comments[dimension] : 'No Comment'
         ]);
       });
     });
@@ -166,7 +168,7 @@ const ViewEvaluationDetail: React.FC = () => {
     
     const totalDimensionScore = subDimensions.reduce((acc, subDimension) => {
       const response = evaluation.responses[dimension][subDimension];
-      return acc + response; // Assuming response is numeric
+      return acc + response;
     }, 0);
   
     const maxScore = totalResponses * 7;
@@ -267,6 +269,10 @@ const ViewEvaluationDetail: React.FC = () => {
                     </Text>
                   </View>
                 ))}
+                  <View style={styles.commentContainer}>
+                    <Text style={styles.commentLabel}>Comment:</Text>
+                    <Text style={styles.commentText}>{evaluation.comments && evaluation.comments[dimension] ? evaluation.comments[dimension] : 'No comments yet.'}</Text>
+                  </View>
               </View>
             );
           })}
@@ -301,8 +307,8 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#000115',
     paddingVertical: 60,
-    justifyContent: 'center', // Centraliza no eixo vertical
-  alignItems: 'center',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   innovationArea: {
     borderColor: 'orange',
@@ -319,7 +325,7 @@ const styles = StyleSheet.create({
     fontWeight: '500',
     marginRight: 32,
     justifyContent: 'space-evenly',
-    textAlign:'center'
+    textAlign: 'center'
   },
   scrollContainer: {
     flexGrow: 1,
@@ -348,7 +354,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12
   },
   headerActions: {
-    display:'flex',
+    display: 'flex',
     flexDirection: 'row',
   },
   iconButton: {
@@ -445,7 +451,7 @@ const styles = StyleSheet.create({
     display: 'flex',
     flexDirection: 'column',
     marginTop: 30,
-    backgroundColor:'orange',
+    backgroundColor: 'orange',
     paddingHorizontal: 16,
     borderRadius: 30
   },
@@ -471,7 +477,22 @@ const styles = StyleSheet.create({
   iconsDownload: {
     verticalAlign: 'middle',
     justifyContent: 'space-between'
-  }
+  },
+  commentContainer: {
+    padding: 10,
+    backgroundColor: '#333',
+    borderRadius: 8,
+    marginTop: 10,
+  },
+  commentLabel: {
+    color: 'orange',
+    fontSize: 16,
+    marginBottom: 5,
+  },
+  commentText: {
+    color: '#FFFFFF',
+    fontSize: 14,
+  },
 });
 
 export default ViewEvaluationDetail;

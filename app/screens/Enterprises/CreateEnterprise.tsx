@@ -3,7 +3,7 @@ import { View, TextInput, TouchableOpacity, Text, StyleSheet, Alert } from 'reac
 import { getFirestore, collection, addDoc, query, where, getDocs } from 'firebase/firestore'; 
 import { FIREBASE_AUTH } from '../../../firebase';
 import { useNavigation } from '@react-navigation/native';
-import Ionicons from 'react-native-vector-icons/Ionicons'; // Importa o ícone Ionicons
+import Ionicons from 'react-native-vector-icons/Ionicons';
 
 const CreateEnterprise = () => {
   const [enterpriseName, setEnterpriseName] = useState('');
@@ -19,7 +19,6 @@ const CreateEnterprise = () => {
   
     setLoading(true);
     try {
-      // Verifica se já existe uma empresa com o mesmo nome
       const enterpriseQuery = query(
         collection(firestore, 'enterprises'),
         where('nome', '==', enterpriseName.trim())
@@ -33,14 +32,13 @@ const CreateEnterprise = () => {
         return;
       }
   
-      // Se não houver duplicatas, crie a nova empresa
       await addDoc(collection(firestore, 'enterprises'), {
         nome: enterpriseName.trim(),
       });
   
       Alert.alert('Success', 'Enterprise created successfully!');
       setEnterpriseName('');
-      navigation.goBack(); // Navega de volta para a página anterior
+      navigation.goBack();
     } catch (error) {
       console.error('Error creating enterprise: ', error);
       Alert.alert('Error', 'An error occurred while creating the enterprise.');
@@ -51,14 +49,11 @@ const CreateEnterprise = () => {
 
   return (
     <View style={styles.container}>
-      {/* Cabeçalho personalizado */}
       <View style={styles.header}>
         <TouchableOpacity onPress={() => navigation.goBack()}>
           <Ionicons name="arrow-back" style={styles.arrowBack} size={40} />
         </TouchableOpacity>
       </View>
-
-      {/* Conteúdo da página */}
       <View style={styles.content}>
         <Text style={styles.headerTitle}>Create Enterprise</Text>
         <Text style={styles.label}>Enterprise Name</Text>
@@ -84,11 +79,10 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#000115',
   },
-  // Estilos para o cabeçalho
   header: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingTop: 40, // Adiciona espaçamento para a status bar
+    paddingTop: 40,
     paddingHorizontal: 20,
     paddingBottom: 10,
     backgroundColor: '#000115',
@@ -103,7 +97,6 @@ const styles = StyleSheet.create({
   arrowBack: {
     color: '#fff'
   },
-  // Estilos para o conteúdo
   content: {
     flex: 1,
     justifyContent: 'center',

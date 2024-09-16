@@ -42,7 +42,7 @@ const ViewEnterprises: React.FC = () => {
     try {
       await deleteDoc(doc(FIREBASE_DB, 'enterprises', id));
       Alert.alert('Success', 'Enterprise deleted successfully.');
-      fetchEnterprises(); // Reload the list after deletion
+      fetchEnterprises();
     } catch (error) {
       Alert.alert('Error', 'An error occurred while deleting the enterprise.');
     }

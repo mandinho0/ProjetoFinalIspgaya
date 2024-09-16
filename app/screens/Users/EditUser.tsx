@@ -16,7 +16,7 @@ export default function EditUser() {
   const [lastName, setLastName] = useState('');
   const [email, setEmail] = useState('');
   const [role, setRole] = useState('');
-  const [enterpriseId, setEnterpriseId] = useState<string>(''); // Adicionar estado para a empresa
+  const [enterpriseId, setEnterpriseId] = useState<string>('');
   const [enterprises, setEnterprises] = useState<Enterprise[]>([]);
   const [loading, setLoading] = useState(true);
   const { user } = useAuth();
@@ -50,7 +50,7 @@ export default function EditUser() {
           setLastName(userData?.lastName || '');
           setEmail(userData?.email || '');
           setRole(userData?.role || 'user');
-          setEnterpriseId(userData?.enterpriseId || ''); // Carregar a empresa associada ao usuário
+          setEnterpriseId(userData?.enterpriseId || '');
         } else {
           Alert.alert('Error', 'User not found.');
           navigation.goBack();
@@ -79,7 +79,7 @@ export default function EditUser() {
         lastName,
         email,
         role,
-        enterpriseId, // Salvar a empresa editada, se for admin
+        enterpriseId,
       });
       Alert.alert('Success', 'User information updated successfully.');
       navigation.goBack();

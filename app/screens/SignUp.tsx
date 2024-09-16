@@ -16,8 +16,8 @@ import { getFirestore, doc, setDoc, collection, getDocs } from 'firebase/firesto
 import { FIREBASE_AUTH } from '../../firebase';
 import { useNavigation } from '@react-navigation/native';
 import logo from '../assets/logoInova.jpg';
-import { Dropdown } from 'react-native-element-dropdown'; // Importar o Dropdown
-import Icon from 'react-native-vector-icons/MaterialIcons'; // Importar o ícone
+import { Dropdown } from 'react-native-element-dropdown';
+import Icon from 'react-native-vector-icons/MaterialIcons';
 import { Enterprise } from '../../types';
 
 const SignUp = () => {
@@ -30,7 +30,7 @@ const SignUp = () => {
   const [passwordError, setPasswordError] = useState('');
   const [enterpriseError, setEnterpriseError] = useState('');
   const [loading, setLoading] = useState(false);
-  const [showPassword, setShowPassword] = useState(false); // Estado para alternar a visibilidade das senhas
+  const [showPassword, setShowPassword] = useState(false);
   const [enterprises, setEnterprises] = useState<Enterprise[]>([]);
   const [selectedEnterprise, setSelectedEnterprise] = useState<string>('');
   const auth = FIREBASE_AUTH;

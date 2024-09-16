@@ -2,7 +2,7 @@ import React, { useState, useCallback } from 'react';
 import { View, Text, StyleSheet, ActivityIndicator, FlatList, TouchableOpacity, Alert } from 'react-native';
 import { collection, getDocs, doc, deleteDoc } from 'firebase/firestore';
 import { FIREBASE_DB } from '../../../firebase';
-import { getAuth } from 'firebase/auth'; // Para obter o usuário autenticado
+import { getAuth } from 'firebase/auth';
 import { useFocusEffect, useNavigation, NavigationProp } from '@react-navigation/native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { RootStackParamList } from '../../../navigationTypes';
@@ -17,7 +17,7 @@ const ViewUsers: React.FC = () => {
   const [users, setUsers] = useState<any[]>([]);
   const navigation = useNavigation<ViewUsersScreenNavigationProp>();
 
-  const currentUserUid = getAuth().currentUser?.uid; // Obtém o UID do usuário atual
+  const currentUserUid = getAuth().currentUser?.uid;
 
   useFocusEffect(
     useCallback(() => {

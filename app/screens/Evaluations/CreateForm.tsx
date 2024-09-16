@@ -7,17 +7,16 @@ import { useAuth } from '../../context/AuthContext';
 import { RootStackParamList } from '../../../types';
 import { Picker } from '@react-native-picker/picker'; 
 
-// Define the type for a User including 'role' and 'enterpriseId'
 type User = {
   id: string;
   firstName: string;
   lastName: string;
-  role: string; // Ensure 'role' exists on the User type
-  enterpriseId: string; // Ensure 'enterpriseId' exists on the User type
+  role: string;
+  enterpriseId: string;
 };
 
 const Form: React.FC = () => {
-  const { user } = useAuth(); // Current logged-in user (manager)
+  const { user } = useAuth();
   const [loading, setLoading] = useState<boolean>(true);
   const [projectName, setProjectName] = useState<string>('');
   const [innovationArea, setInnovationArea] = useState<string>('');
@@ -27,7 +26,6 @@ const Form: React.FC = () => {
   const [introCompleted, setIntroCompleted] = useState<boolean>(false);
   const navigation = useNavigation<NavigationProp<RootStackParamList>>();
 
-  // Effect to load users with role 'user'
   useEffect(() => {
     const fetchUsers = async () => {
       setLoading(true);
@@ -37,8 +35,8 @@ const Form: React.FC = () => {
           .map(doc => ({
             id: doc.id,
             ...doc.data(),
-          } as User)) // Explicitly typing the returned data as User
-          .filter(user => user.role === 'user'); // Filter users with role 'user'
+          } as User))
+          .filter(user => user.role === 'user');
 
         setUsers(usersList);
       } catch (e) {
@@ -71,7 +69,7 @@ const Form: React.FC = () => {
         userId: selectedUserId,
         projectName,
         innovationArea,
-        enterpriseId: user?.enterpriseId, // Associate the enterprise ID of the manager
+        enterpriseId: user?.enterpriseId,
         createdAt: new Date(),
         status: 'pending'
       };
