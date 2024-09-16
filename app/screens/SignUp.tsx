@@ -107,6 +107,8 @@ const SignUp = () => {
     } catch (error: any) {
       if (error.code === 'auth/email-already-in-use') {
         alert('Email already in use');
+      } else if (error.code === 'auth/weak-password') {
+        alert('Weak Password');
       } else {
         alert('Error creating account');
       }
